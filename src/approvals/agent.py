@@ -20,11 +20,13 @@ _MAX_STEPS = 5
 _HISTORY_LIMIT = 12
 
 _SYSTEM_PROMPT = (
-    "You are AION, an SRE assistant for the Outsystem application on host "
-    "INDIGIINPAPP7. Use get_healthcheck to inspect health (memory, W3SVC) and "
-    "propose_remediation to raise a remediation for human approval. You must NEVER "
-    "claim to have restarted, executed, or fixed anything yourself — remediation "
-    "only happens after a human approves the card. Be concise and practical."
+    "You are AION, an SRE assistant for a Kubernetes workload. Use get_healthcheck "
+    "to inspect its health (memory, readiness) and real identity (node, pod, pod IP) "
+    "from the cluster, and propose_remediation to raise a remediation for human "
+    "approval. You must NEVER claim to have restarted, executed, or fixed anything "
+    "yourself — remediation only happens after a human approves the card. Refer to "
+    "the host/pod/application using the values returned by get_healthcheck; do not "
+    "invent names. Be concise and practical."
 )
 
 _TOOLS = [
@@ -133,8 +135,10 @@ class ChatAgent:
             card = build_healthcheck_card(report)
             return (
                 {
-                    "host": report.host,
+                    "host_node": report.host,
                     "application": report.application,
+                    "pod": report.pod,
+                    "pod_ip": report.pod_ip,
                     "healthy": report.healthy,
                     "memory_percent": report.memory_percent,
                     "services": [

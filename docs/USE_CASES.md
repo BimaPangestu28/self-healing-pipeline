@@ -96,10 +96,13 @@ demo's chat box (e.g. *"how is outsystem?"*, *"please fix the memory issue"*).
 |---------|-----------|--------------------|
 | Remediation (restart) | **Real** k8s rollout restart / real ansible-playbook | AWX job on the real host |
 | Memory metric | **Real** — allocated in `memory-app`, read from the pod cgroup | Real host metric via monitoring / Ansible healthcheck |
+| Identity (host/pod/IP) | **Real** — node, pod name, pod IP read from k3s | Alert payload + inventory/CMDB |
+| Remediation parameters | **Real** — namespace/deployment/pod/node from the cluster | AWX template id + host |
 | Analysis narrative | **Real LLM** (Azure OpenAI / DeepSeek) or template fallback | LLM (AION) |
 | Target | k8s `memory-app` (demo) / `sample-app` whoami (image-drift pipeline) | Windows/IIS host, OutSystems |
 | Teams cards | Real Adaptive Cards (web renderer + invoke contract) | Real Teams tenant via bot / Power Automate |
 
-> The only non-real element left is host **identity** (`INDIGIINPAPP7`, template ids
-> 9665/9666, IP) — hardcoded to mirror the AION screenshots. In production these come
-> from your inventory/CMDB and the alert payload.
+> Identity now comes from the cluster: `Host (node)` is the k3s node, plus the real
+> `Pod` and `Pod IP`. The AWX-style `template_id` only appears when the AWX executor
+> is selected; the default Kubernetes executor uses real namespace/deployment/pod/node
+> parameters.

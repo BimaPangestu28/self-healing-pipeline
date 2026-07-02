@@ -37,6 +37,9 @@ class FakeKube:
     def pod_memory_percent(self, deployment: str) -> int:
         return self.memory
 
+    def pod_identity(self, deployment: str) -> dict:
+        return {"pod": f"{deployment}-abc123", "node": "colima", "pod_ip": "10.42.0.9"}
+
     def trigger_memory_pressure(self, deployment: str, megabytes: int) -> bool:
         self.memory = 88
         return True

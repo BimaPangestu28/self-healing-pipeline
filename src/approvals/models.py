@@ -27,14 +27,16 @@ class ServiceCheck:
 
 @dataclass(frozen=True)
 class HealthReport:
-    """Outcome of an Outsystem-style healthcheck for one host."""
+    """Outcome of a healthcheck for one workload; identity comes from the cluster."""
 
-    host: str
-    application: str
+    host: str  # the node the workload runs on
+    application: str  # the deployment name
     healthy: bool
     memory_percent: int
     deployment_ready: bool
     services: list[ServiceCheck]
+    pod: str | None = None
+    pod_ip: str | None = None
 
 
 @dataclass(frozen=True)

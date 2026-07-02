@@ -33,6 +33,9 @@ class PipelineConfig:
     manifest_path: str = _DEFAULT_MANIFEST
     context: str | None = None  # kube context; None => current context
 
+    # AWX job template id used only when the AWX executor is selected.
+    awx_template_id: str = ""
+
     rollout_timeout_seconds: int = 120
 
     # >= this many concurrent failures is treated as a systemic incident (escalate all).

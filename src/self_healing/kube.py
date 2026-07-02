@@ -229,6 +229,18 @@ class KubeClient:
             return None
         return max(0, min(100, round(used_bytes / limit_bytes * 100)))
 
+    def pod_identity(self, deployment: str) -> dict[str, str | None]:
+        """Return real identity of the deployment's pod: {pod, node, pod_ip}."""
+        pod = self._first_running_pod(deployment)
+        if not pod:
+            return {"pod": None, "node": None, "pod_ip": None}
+        result = self._run(
+            ["get", "pod", pod, "-o", "jsonpath={.spec.nodeName}|{.status.podIP}"],
+            check=False,
+        )
+        node, _, pod_ip = result.stdout.strip().partition("|")
+        return {"pod": pod, "node": node or None, "pod_ip": pod_ip or None}
+
     def trigger_memory_pressure(self, deployment: str, megabytes: int) -> bool:
         """Ask the target app (via its pod) to allocate and hold N MB of memory."""
         pod = self._first_running_pod(deployment)

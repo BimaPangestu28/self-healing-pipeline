@@ -59,10 +59,15 @@ def _service_lines(report: HealthReport) -> list[dict[str, Any]]:
 def build_healthcheck_card(report: HealthReport, analysis: str | None = None) -> dict[str, Any]:
     """Render an Outsystem-style healthcheck result (optionally with analysis)."""
     status_label, status_color = _status_text(report.healthy)
+    identity_facts = [("Host (node)", report.host), ("Application", report.application)]
+    if report.pod:
+        identity_facts.append(("Pod", report.pod))
+    if report.pod_ip:
+        identity_facts.append(("Pod IP", report.pod_ip))
     body: list[dict[str, Any]] = [
         _text(f"🩺 Auto Healthcheck Result for {report.application}", weight="Bolder", size="Large"),
         _text(f"Overall Status: {status_label}", weight="Bolder", color=status_color),
-        _facts([("Host", report.host), ("Application", report.application)]),
+        _facts(identity_facts),
         _text("Services", weight="Bolder", spacing="Medium"),
     ]
     body.extend(_service_lines(report))

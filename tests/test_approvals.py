@@ -38,6 +38,9 @@ class FakeKube:
     def pod_memory_percent(self, deployment: str) -> int:
         return self.memory
 
+    def pod_identity(self, deployment: str) -> dict:
+        return {"pod": f"{deployment}-abc123", "node": "colima", "pod_ip": "10.42.0.9"}
+
     def trigger_memory_pressure(self, deployment: str, megabytes: int) -> bool:
         self.memory = 88
         return True
@@ -67,12 +70,16 @@ def test_healthcheck_starts_unhealthy_due_to_memory():
     assert memory.ok is False
 
 
-def test_recommend_action_for_high_memory():
+def test_recommend_action_uses_real_cluster_identity():
     service = _service()
     action = service.recommend_action(service.healthcheck())
     assert action is not None
-    assert action.action == "service_management_outsystem_memory"
-    assert action.parameters["template_id"] == "9666"
+    assert action.action.startswith("restart_deployment/")
+    # Kubernetes executor -> parameters come from the cluster, not hardcoded AWX ids.
+    assert action.parameters["namespace"] == CONFIG.namespace
+    assert action.parameters["deployment"] == CONFIG.deployment
+    assert action.parameters["node"] == "colima"
+    assert action.parameters["pod"].startswith(CONFIG.deployment)
 
 
 def test_approve_executes_and_heals():

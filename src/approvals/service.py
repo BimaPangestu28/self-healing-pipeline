@@ -52,8 +52,11 @@ class DemoService:
         self.kube = kube
         self.config = config or PipelineConfig()
         self.executor = executor or build_executor(kube, self.config)
-        self.host = "INDIGIINPAPP7"
-        self.application = "Outsystem"
+        # Identity is derived from the cluster on each healthcheck (see below);
+        # these are fallbacks used only before the first read / when reads fail.
+        self.host = self.config.namespace
+        self.application = self.config.deployment
+        self._identity: dict[str, str | None] = {"pod": None, "node": None, "pod_ip": None}
         # Used only when the real cgroup metric cannot be read.
         self._fallback_memory = _FALLBACK_UNHEALTHY_MEMORY
         self._requests: dict[str, ApprovalRequest] = {}
@@ -85,7 +88,7 @@ class DemoService:
         return measured if measured is not None else self._fallback_memory
 
     def healthcheck(self) -> HealthReport:
-        """Probe the target: real deployment readiness + real pod memory metric."""
+        """Probe the target: real readiness, real pod memory, real cluster identity."""
         try:
             ready = (
                 self.kube.available_replicas(self.config.deployment) >= 1
@@ -94,6 +97,15 @@ class DemoService:
         except KubeError as exc:  # pragma: no cover - defensive
             logger.warning("healthcheck kube read failed: %s", exc)
             ready = False
+
+        try:
+            self._identity = self.kube.pod_identity(self.config.deployment)
+        except KubeError as exc:  # pragma: no cover - defensive
+            logger.warning("pod identity read failed: %s", exc)
+
+        # Host = the node the workload runs on; application = the deployment name.
+        self.host = self._identity.get("node") or self.config.namespace
+        self.application = self.config.deployment
 
         memory_percent = self._read_memory_percent()
         memory_ok = memory_percent < MEMORY_NOK_THRESHOLD
@@ -117,6 +129,8 @@ class DemoService:
             memory_percent=memory_percent,
             deployment_ready=ready,
             services=services,
+            pod=self._identity.get("pod"),
+            pod_ip=self._identity.get("pod_ip"),
         )
 
     # --- recommendation + approval -----------------------------------------
@@ -125,19 +139,30 @@ class DemoService:
         """Propose a remediation action for an unhealthy report, if one applies."""
         if report.healthy:
             return None
-        if report.memory_percent >= MEMORY_NOK_THRESHOLD:
-            return ActionSpec(
-                action="service_management_outsystem_memory",
-                tool=self.executor.tool,
-                description="Clear Host Full memory Outsystem",
-                parameters={"template_id": "9666", "limit_ip": "10.59.129.87"},
-            )
+        reason = "high memory usage" if report.memory_percent >= MEMORY_NOK_THRESHOLD else "unready pods"
         return ActionSpec(
-            action="service_management_outsystem_restart",
+            action=f"restart_deployment/{self.config.deployment}",
             tool=self.executor.tool,
-            description="Restart Outsystem application",
-            parameters={"template_id": "9665", "limit_ip": "10.59.129.87"},
+            description=(
+                f"Restart deployment {self.config.deployment} in namespace "
+                f"{self.config.namespace} to remediate {reason}"
+            ),
+            parameters=self._action_parameters(report),
         )
+
+    def _action_parameters(self, report: HealthReport) -> dict[str, str]:
+        """Build remediation parameters from the real cluster identity per backend."""
+        if self.executor.tool == "awx":
+            return {
+                "template_id": self.config.awx_template_id,
+                "limit_ip": report.pod_ip or "",
+            }
+        return {
+            "namespace": self.config.namespace,
+            "deployment": self.config.deployment,
+            "pod": report.pod or "",
+            "node": report.host,
+        }
 
     def create_approval(self, action: ActionSpec) -> ApprovalRequest:
         """Register a pending approval request for an action."""
