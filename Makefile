@@ -17,7 +17,7 @@ export PATH := /usr/local/bin:$(CURDIR)/.venv/bin:$(PATH)
 
 .DEFAULT_GOAL := help
 .PHONY: help install install-ansible install-playwright \
-        cluster-up cluster-down cluster-status \
+        cluster-up cluster-down cluster-status build-image \
         demo demo-ansible pipeline-setup pipeline-run pipeline-status pipeline-break \
         test test-e2e test-all screenshots clean
 
@@ -46,16 +46,19 @@ cluster-up: ## Start a local k3s cluster via colima
 cluster-down: ## Stop the colima cluster
 	colima stop
 
-cluster-status: ## Show nodes and the sample-app pods
+cluster-status: ## Show nodes and the demo pods
 	kubectl get nodes
-	kubectl -n self-healing get pods -l app=sample-app || true
+	kubectl -n self-healing get pods || true
+
+build-image: ## Build the memory-app demo image into the cluster's docker (colima)
+	docker build -t self-healing-memory-app:local deploy/memory-app
 
 # --- interactive approval demo --------------------------------------------
 
-demo: ## Run the interactive approval demo (Kubernetes executor) at :8080
+demo: build-image ## Run the interactive approval demo (Kubernetes executor) at :8080
 	$(PY) run_demo.py
 
-demo-ansible: install-ansible ## Run the demo with the real Ansible executor
+demo-ansible: build-image install-ansible ## Run the demo with the real Ansible executor
 	EXECUTOR=ansible $(PY) run_demo.py
 
 # --- self-healing pipeline CLI --------------------------------------------
