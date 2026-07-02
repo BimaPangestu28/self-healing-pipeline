@@ -113,6 +113,7 @@ class ChatAgent:
                 }
             )
             for call in reply.tool_calls:
+                logger.info("agent: LLM requested tool '%s'", call.name)
                 result, card = self._dispatch(call.name, call.arguments)
                 if card is not None:
                     cards.append(card)

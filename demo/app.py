@@ -25,6 +25,8 @@ from src.approvals.teams_endpoint import handle_teams_activity, verify_hmac
 from src.self_healing.config import PipelineConfig
 from src.self_healing.kube import KubeClient
 
+from demo.trace import install as install_activity_log
+
 logger = logging.getLogger(__name__)
 
 _STATIC_DIR = Path(__file__).parent / "static"
@@ -49,7 +51,24 @@ def _build_service() -> DemoService:
 
 service = _build_service()
 agent = ChatAgent(service)
-app = FastAPI(title="Self-Healing Approval Demo")
+_activity_log = install_activity_log()
+
+app = FastAPI(
+    title="Self-Healing Approval Demo",
+    version="0.1.0",
+    description=(
+        "AIOps self-healing demo against a real Kubernetes cluster. Endpoints drive a "
+        "detect → classify → remediate → verify → report loop; remediation runs either "
+        "human-approved (approval card) or autonomously (auto-heal). Identity and memory "
+        "metrics are read live from the cluster."
+    ),
+    openapi_tags=[
+        {"name": "Demo", "description": "Healthcheck, reset, and remediation (approval + autonomous)."},
+        {"name": "Agent", "description": "Conversational LLM agent (tool-calling, approval-gated)."},
+        {"name": "Teams", "description": "Bot Framework messaging endpoint for Adaptive Card actions."},
+        {"name": "Observability", "description": "Live activity log of the real operations under the hood."},
+    ],
+)
 
 
 def _analysis_text(report: HealthReport) -> str:
@@ -72,19 +91,27 @@ def index() -> FileResponse:
     return FileResponse(_STATIC_DIR / "index.html")
 
 
-@app.post("/api/demo/reset")
+@app.get("/api/demo/logs", tags=["Observability"], summary="Recent under-the-hood activity (kubectl, cgroup, LLM)")
+def activity_logs(after: int = 0) -> dict:
+    """Return activity-log entries newer than ``after`` (a cursor id)."""
+    entries = _activity_log.entries_after(after)
+    cursor = entries[-1]["id"] if entries else after
+    return {"cursor": cursor, "entries": entries}
+
+
+@app.post("/api/demo/reset", tags=["Demo"], summary="Deploy the target and create a real high-memory incident")
 def reset() -> dict:
     """Redeploy the sample app healthy and seed the simulated high-memory fault."""
     return _healthcheck_response(service.reset_target())
 
 
-@app.post("/api/demo/healthcheck")
+@app.post("/api/demo/healthcheck", tags=["Demo"], summary="Healthcheck: real readiness + real pod memory (cgroup)")
 def healthcheck() -> dict:
     """Run a healthcheck against the current target state."""
     return _healthcheck_response(service.healthcheck())
 
 
-@app.post("/api/demo/autonomous")
+@app.post("/api/demo/autonomous", tags=["Demo"], summary="Autonomous remediation — detect, execute, verify (no approval)")
 def autonomous() -> dict:
     """AIOps mode: create an incident, then auto-remediate with NO human approval."""
     service.reset_target()
@@ -101,7 +128,7 @@ def autonomous() -> dict:
     }
 
 
-@app.post("/api/demo/request-approval")
+@app.post("/api/demo/request-approval", tags=["Demo"], summary="Recommend an action and open a human approval card")
 def request_approval() -> dict:
     """Recommend a remediation for the current (unhealthy) state and open an approval."""
     report = service.healthcheck()
@@ -112,7 +139,7 @@ def request_approval() -> dict:
     return {"pending": True, "request_id": request.request_id, "card": build_approval_card(request)}
 
 
-@app.post("/api/demo/approve")
+@app.post("/api/demo/approve", tags=["Demo"], summary="Approve a request → execute remediation + verify")
 def approve(payload: dict = Body(default={})) -> JSONResponse:
     """Approve a request: execute the real remediation and return the result card."""
     request_id = payload.get("requestId") or payload.get("request_id")
@@ -123,7 +150,7 @@ def approve(payload: dict = Body(default={})) -> JSONResponse:
     return JSONResponse({"status": request.status.value, "card": build_result_card(request)})
 
 
-@app.post("/api/demo/reject")
+@app.post("/api/demo/reject", tags=["Demo"], summary="Reject a request (no change to the cluster)")
 def reject(payload: dict = Body(default={})) -> JSONResponse:
     """Reject a request without touching the cluster."""
     request_id = payload.get("requestId") or payload.get("request_id")
@@ -134,7 +161,7 @@ def reject(payload: dict = Body(default={})) -> JSONResponse:
     return JSONResponse({"status": request.status.value, "card": build_result_card(request)})
 
 
-@app.post("/api/demo/chat")
+@app.post("/api/demo/chat", tags=["Agent"], summary="Chat with the LLM SRE agent (tool-calling, approval-gated)")
 def chat(payload: dict = Body(default={})) -> JSONResponse:
     """Conversational endpoint: an LLM agent that can healthcheck + propose remediation."""
     session_id = payload.get("session_id") or "default"
@@ -144,7 +171,7 @@ def chat(payload: dict = Body(default={})) -> JSONResponse:
     return JSONResponse(agent.handle(session_id, message))
 
 
-@app.post("/api/teams/messages")
+@app.post("/api/teams/messages", tags=["Teams"], summary="Bot Framework adaptiveCard/action invoke (Approve/Reject)")
 async def teams_messages(request: Request) -> JSONResponse:
     """Bot Framework messaging endpoint for Teams Adaptive Card actions.
 

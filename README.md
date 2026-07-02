@@ -168,6 +168,22 @@ For a **real Azure Bot** (Bot Framework JWT auth, Teams app manifest, dev tunnel
 sideload), see **[docs/TEAMS_BOT.md](docs/TEAMS_BOT.md)**. Setting `MICROSOFT_APP_ID`
 makes `/api/teams/messages` require a valid Bot Framework token.
 
+## For a technical audience (not just the UI)
+
+- **API explorer (Swagger):** http://127.0.0.1:8080/docs — every endpoint documented and runnable; `/openapi.json` for the spec.
+- **Live "Under the hood" panel:** the demo streams the real operations as you click —
+  `kubectl` commands, pod cgroup reads, `rollout restart`, LLM tool calls. Also at
+  `GET /api/demo/logs`.
+- **Prove the metric is real:** `kubectl exec <pod> -- cat /sys/fs/cgroup/memory.current` — the demo's % is that ÷ `memory.max`.
+- **Runbook:** [docs/DEMO.md](docs/DEMO.md) — step-by-step technical demo script.
+- **Internals:** [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — component + data-flow diagram.
+
+![under the hood](docs/screenshots/technical-trace.png)
+
+> Reliable local cluster: **kind** (`kind create cluster --name selfheal` + `kind load
+> docker-image self-healing-memory-app:local --name selfheal`) is what CI uses and is
+> more robust than colima's k3s. The Makefile's `cluster-up` uses colima; either works.
+
 ## Tests
 
 ```bash

@@ -50,6 +50,15 @@
     .composer input:focus { border-color:var(--brand); }
     .composer button { border:none; background:var(--brand); color:#fff; border-radius:20px; padding:10px 18px; font-size:14px; cursor:pointer; }
     .composer button:disabled { opacity:.5; cursor:not-allowed; }
+    .trace { border-top:1px solid #eee; background:#0f1020; }
+    .trace > summary { position:sticky; top:0; background:#1a1c33; color:#fff; padding:7px 14px;
+                       cursor:pointer; font-size:12px; user-select:none; }
+    #trace-body { max-height:190px; overflow:auto; padding:6px 0;
+                  font:12px/1.55 ui-monospace,SFMono-Regular,Menlo,monospace; color:#cdd3ff; }
+    #trace-body .line { padding:0 14px; white-space:pre-wrap; word-break:break-word; }
+    #trace-body .line.WARNING { color:#ffcf6b; }
+    #trace-body .line.ERROR { color:#ff8b8b; }
+    #trace-body .lg { color:#7f86c9; }
     /* Adaptive Cards look */
     .ac-textBlock { margin:2px 0; }
     .ac-pushButton { border-radius:8px !important; padding:8px 16px !important; margin-right:8px !important;
@@ -74,6 +83,10 @@
       <div class="note">Click “Start scenario” for the scripted flow, or just chat below
         (e.g. “how is outsystem?”, “please fix the memory issue”).</div>
     </div>
+    <details class="trace" id="trace" open>
+      <summary>⚙️ Under the hood — live activity (kubectl · cgroup · LLM)</summary>
+      <div id="trace-body"></div>
+    </details>
     <div class="composer">
       <input id="chat-input" type="text" placeholder="Ask AION… e.g. how is outsystem?" autocomplete="off" />
       <button id="chat-send">Send</button>
@@ -231,6 +244,28 @@
     btnAuto.addEventListener("click", autonomousHeal);
     chatSend.addEventListener("click", sendChat);
     chatInput.addEventListener("keydown", (e) => { if (e.key === "Enter") sendChat(); });
+
+    // --- live activity log (under the hood) ---
+    const traceBody = document.getElementById("trace-body");
+    let traceCursor = 0;
+    function escapeHtml(s) { return s.replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c])); }
+    async function pollTrace() {
+      try {
+        const res = await fetch("/api/demo/logs?after=" + traceCursor);
+        const data = await res.json();
+        traceCursor = data.cursor;
+        (data.entries || []).forEach((e) => {
+          const line = document.createElement("div");
+          line.className = "line " + e.level;
+          const shortName = e.logger.replace(/^src\./, "").replace(/^demo\.?/, "");
+          line.innerHTML = '<span class="lg">' + escapeHtml(shortName) + "</span>  " + escapeHtml(e.message);
+          traceBody.appendChild(line);
+        });
+        if (data.entries && data.entries.length) traceBody.scrollTop = traceBody.scrollHeight;
+      } catch (e) { /* ignore transient poll errors */ }
+    }
+    setInterval(pollTrace, 1500);
+    pollTrace();
   </script>
 </body>
 </html>

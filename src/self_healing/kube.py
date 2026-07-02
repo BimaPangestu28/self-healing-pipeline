@@ -62,7 +62,7 @@ class KubeClient:
     ) -> subprocess.CompletedProcess[str]:
         """Run a kubectl command, raising KubeError on failure when ``check`` is set."""
         command = self._command(args, namespaced=namespaced)
-        logger.debug("kubectl %s", " ".join(command))
+        logger.info("kubectl %s", " ".join(args))
         try:
             result = subprocess.run(
                 command, capture_output=True, text=True, timeout=timeout

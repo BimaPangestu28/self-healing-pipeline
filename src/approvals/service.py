@@ -108,6 +108,10 @@ class DemoService:
         self.application = self.config.deployment
 
         memory_percent = self._read_memory_percent()
+        logger.info(
+            "healthcheck: node=%s pod=%s memory=%d%% ready=%s",
+            self.host, self._identity.get("pod"), memory_percent, ready,
+        )
         memory_ok = memory_percent < MEMORY_NOK_THRESHOLD
         services = [
             ServiceCheck(
@@ -193,6 +197,10 @@ class DemoService:
             return request
 
         request.status = ApprovalStatus.APPROVED
+        logger.info(
+            "approve %s: executing '%s' via %s executor",
+            request_id, request.action.action, self.executor.tool,
+        )
         execution = self.executor.execute(request.action)
         request.execution = execution
         if execution.success:
@@ -208,12 +216,14 @@ class DemoService:
         Intended for high-confidence, low-risk actions. Returns the pre-check report
         and the executed request (with verification), or acted=False when healthy.
         """
+        logger.info("autonomous: begin (no approval gate)")
         before = self.healthcheck()
         if before.healthy:
             return {"before": before, "acted": False, "request": None}
         action = self.recommend_action(before)
         if action is None:
             return {"before": before, "acted": False, "request": None}
+        logger.info("autonomous: policy autoFixable -> auto-approving '%s'", action.action)
         request = self.create_approval(action)
         decided = self.approve(request.request_id)  # executes + verifies, no human
         return {"before": before, "acted": True, "request": decided}
