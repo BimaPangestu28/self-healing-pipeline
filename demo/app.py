@@ -15,6 +15,7 @@ from pathlib import Path
 from fastapi import Body, FastAPI, Request
 from fastapi.responses import FileResponse, JSONResponse
 
+from src.approvals.analysis import build_analysis
 from src.approvals.cards import build_approval_card, build_healthcheck_card, build_result_card
 from src.approvals.models import HealthReport
 from src.approvals.service import DemoService
@@ -39,16 +40,8 @@ app = FastAPI(title="Self-Healing Approval Demo")
 
 
 def _analysis_text(report: HealthReport) -> str:
-    """Produce a root-cause + recommendation narrative for a healthcheck report."""
-    if report.healthy:
-        return "All services are healthy. No action required."
-    return (
-        f"Root Cause: The Memory Usage service check is NOK, reporting high utilization at "
-        f"{report.memory_percent}%. The W3SVC service is healthy.\n\n"
-        f"Recommendation: The overall health status of {report.application} on host "
-        f"{report.host} is Unhealthy due to high memory consumption. A restart of the "
-        f"{report.application} application is required to reclaim memory."
-    )
+    """Root-cause + recommendation narrative (LLM when configured, else templated)."""
+    return build_analysis(report)
 
 
 def _healthcheck_response(report: HealthReport) -> dict:

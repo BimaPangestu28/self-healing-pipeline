@@ -31,6 +31,7 @@ jobs:
             tests/test_teams_notifications.py \
             tests/test_approvals.py \
             tests/test_teams_endpoint.py \
+            tests/test_analysis.py \
             -q
 
   integration:
