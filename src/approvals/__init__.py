@@ -2,8 +2,8 @@
 
 Reproduces the AION "Action Approval Required" flow: an unhealthy healthcheck
 produces a recommended action, an interactive Adaptive Card asks a human to
-Approve/Reject, and on approval the remediation is executed against the cluster
-and verified.
+Approve/Reject, and on approval the remediation is executed by a pluggable
+backend (Kubernetes / Ansible / AWX) and verified.
 """
 
 from src.approvals.cards import (
@@ -11,23 +11,37 @@ from src.approvals.cards import (
     build_healthcheck_card,
     build_result_card,
 )
-from src.approvals.service import (
+from src.approvals.executors import (
+    AnsibleExecutor,
+    AwxExecutor,
+    Executor,
+    KubernetesExecutor,
+    build_executor,
+)
+from src.approvals.models import (
     ActionSpec,
     ApprovalRequest,
     ApprovalStatus,
-    DemoService,
+    ExecutionResult,
     HealthReport,
     ServiceCheck,
 )
+from src.approvals.service import DemoService
 
 __all__ = [
     "build_approval_card",
     "build_healthcheck_card",
     "build_result_card",
+    "AnsibleExecutor",
+    "AwxExecutor",
+    "Executor",
+    "KubernetesExecutor",
+    "build_executor",
     "ActionSpec",
     "ApprovalRequest",
     "ApprovalStatus",
-    "DemoService",
+    "ExecutionResult",
     "HealthReport",
     "ServiceCheck",
+    "DemoService",
 ]

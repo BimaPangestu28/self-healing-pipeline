@@ -85,13 +85,17 @@ run summary and have this service render + deliver it: `POST /api/v1/pipeline/re
 
 Reproduces the AION "Action Approval Required" flow with a clickable web UI that
 renders the **real Adaptive Cards** (via the official Adaptive Cards JS renderer),
-backed by a **real rollout restart** on the local cluster:
+backed by a **real remediation** on the local cluster:
 
 ```
 ① Auto Healthcheck  → ❌ Unhealthy (Memory 85% NOK, W3SVC OK) + analysis/recommendation
 ② Action Approval Required → interactive card with [Approve] [Reject]
-③ Approve → kubectl rollout restart (real) → verify → ✅ Completed Successfully / OK Healthy
+③ Approve → remediation (rollout restart) → verify → ✅ Completed Successfully / OK Healthy
 ```
+
+| ① Alert + approval | ② Approved + healed |
+|---|---|
+| ![alert and approval](docs/screenshots/01-alert-and-approval.png) | ![approved result](docs/screenshots/02-approved-result.png) |
 
 Run it:
 
@@ -113,15 +117,55 @@ return the completion card. Backend endpoints (also drivable via `curl`):
 | `POST /api/demo/approve` | Execute real rollout restart, verify, return result card |
 | `POST /api/demo/reject` | Reject without touching the cluster |
 
-> The memory metric is simulated (deterministic demo); the **remediation action is a
-> real Kubernetes rollout restart**. To wire the buttons to actual Microsoft Teams,
-> point a Teams bot or a Power Automate flow at `/api/demo/approve` — the card actions
-> already carry `{"verb": "approve"|"reject", "requestId": …}`.
+> The memory metric is simulated (deterministic demo); the **remediation action is
+> real** (see backends below). The approval card actions carry
+> `{"verb": "approve"|"reject", "requestId": …}`.
+
+## Remediation backends (Kubernetes / Ansible / AWX)
+
+The approved action is executed by a pluggable backend selected via `EXECUTOR`:
+
+| `EXECUTOR` | Backend | What it does |
+|-----------|---------|--------------|
+| _(unset)_ | `KubernetesExecutor` | `kubectl rollout restart` on the deployment (default, zero deps) |
+| `ansible` | `AnsibleExecutor` | Runs a real `ansible-playbook` (`deploy/ansible/restart_app.yml`) |
+| `awx` + `AWX_URL` | `AwxExecutor` | Launches an AWX/Tower job template over REST and polls it to completion |
+
+```bash
+uv pip install --python .venv/bin/python ansible-core   # for EXECUTOR=ansible
+EXECUTOR=ansible .venv/bin/python run_demo.py
+
+AWX_URL=https://awx.example AWX_TOKEN=xxx EXECUTOR=awx .venv/bin/python run_demo.py
+```
+
+The production flow uses AWX template ids (9665/9666); the demo carries those ids
+through so the report matches. Swap in the real Ansible playbook / AWX template to
+target actual hosts instead of the local cluster.
+
+## Connect to real Microsoft Teams
+
+The approval buttons are `Action.Execute` (Teams **Universal Actions**). Point a
+Teams bot or a Power Automate flow at the bot messaging endpoint:
+
+```
+POST /api/teams/messages
+```
+
+It handles the `adaptiveCard/action` invoke, runs approve/reject, and returns a
+refreshed Adaptive Card (`{"statusCode":200,"type":"application/vnd.microsoft.card.adaptive","value":…}`)
+that Teams renders in place. For the Teams **outgoing webhook** model, set
+`TEAMS_OUTGOING_WEBHOOK_SECRET` (base64) and the endpoint verifies the HMAC
+signature on every request (unsigned requests get `401`).
+
+To *post* the initial approval card into a channel, use the incoming webhook
+(`TEAMS_WEBHOOK_URL`) via `src/notifications` — see below.
 
 ## Tests
 
 ```bash
-PYTHONPATH=$PWD .venv/bin/python -m pytest tests/test_self_healing.py tests/test_teams_notifications.py tests/test_approvals.py -q
+PYTHONPATH=$PWD .venv/bin/python -m pytest \
+  tests/test_self_healing.py tests/test_teams_notifications.py \
+  tests/test_approvals.py tests/test_teams_endpoint.py -q
 ```
 
 `test_self_healing.py` exercises the full detect→fix→validate loop against an in-memory fake

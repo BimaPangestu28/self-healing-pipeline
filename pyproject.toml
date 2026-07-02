@@ -28,6 +28,11 @@ dev = [
     "pytest-cov>=5.0.0",
     "ruff>=0.6.0",
     "mypy>=1.11.0",
+    "playwright>=1.47.0",
+]
+# Remediation via a real ansible-playbook (EXECUTOR=ansible).
+ansible = [
+    "ansible-core>=2.16",
 ]
 
 [tool.uv]

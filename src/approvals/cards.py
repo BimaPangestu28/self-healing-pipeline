@@ -2,16 +2,16 @@
 
 These mirror the AION Teams cards: an "Auto Healthcheck Result" summary, an
 interactive "Action Approval Required" card with Approve/Reject actions, and a
-completion card. The approval actions are ``Action.Submit`` with a ``verb`` in
-their data payload so any host (the demo web renderer, a Teams bot, or a Power
-Automate flow) can route the decision back to the backend.
+completion card. The approval actions use ``Action.Execute`` (the Teams Universal
+Action model) with a ``verb`` and a ``data`` payload, so the same card works both
+in the web renderer and when posted to Teams via a bot.
 """
 
 from __future__ import annotations
 
 from typing import Any
 
-from src.approvals.service import ApprovalRequest, ApprovalStatus, HealthReport
+from src.approvals.models import ApprovalRequest, ApprovalStatus, HealthReport
 
 SCHEMA = "http://adaptivecards.io/schemas/adaptive-card.json"
 VERSION = "1.4"
@@ -35,6 +35,11 @@ def _card(body: list[dict[str, Any]], actions: list[dict[str, Any]] | None = Non
     if actions:
         card["actions"] = actions
     return card
+
+
+def build_message_card(text: str, *, color: str | None = None) -> dict[str, Any]:
+    """Render a single-line informational Adaptive Card."""
+    return _card([_text(text, weight="Bolder", **({"color": color} if color else {}))])
 
 
 def _status_text(healthy: bool) -> tuple[str, str]:
@@ -67,6 +72,17 @@ def build_healthcheck_card(report: HealthReport, analysis: str | None = None) ->
     return _card(body)
 
 
+def _decision_action(title: str, verb: str, request_id: str, style: str) -> dict[str, Any]:
+    """Build an Action.Execute decision button carrying verb + requestId."""
+    return {
+        "type": "Action.Execute",
+        "title": title,
+        "verb": verb,
+        "style": style,
+        "data": {"verb": verb, "requestId": request_id},
+    }
+
+
 def build_approval_card(request: ApprovalRequest) -> dict[str, Any]:
     """Render the interactive 'Action Approval Required' card with Approve/Reject."""
     action = request.action
@@ -86,18 +102,8 @@ def build_approval_card(request: ApprovalRequest) -> dict[str, Any]:
         _facts([(key, value) for key, value in action.parameters.items()]),
     ]
     actions = [
-        {
-            "type": "Action.Submit",
-            "title": "Approve",
-            "style": "positive",
-            "data": {"verb": "approve", "requestId": request.request_id},
-        },
-        {
-            "type": "Action.Submit",
-            "title": "Reject",
-            "style": "destructive",
-            "data": {"verb": "reject", "requestId": request.request_id},
-        },
+        _decision_action("Approve", "approve", request.request_id, "positive"),
+        _decision_action("Reject", "reject", request.request_id, "destructive"),
     ]
     return _card(body, actions)
 
@@ -118,9 +124,9 @@ def build_result_card(request: ApprovalRequest) -> dict[str, Any]:
             ]
         )
 
-    execution = request.execution or {}
+    execution = request.execution
     verify = request.verify
-    success = bool(execution.get("success"))
+    success = bool(execution and execution.success)
     title = "✅ Alert Action Completed Successfully" if success else "❌ Alert Action Failed"
     title_color = "Good" if success else "Attention"
 
@@ -141,14 +147,15 @@ def build_result_card(request: ApprovalRequest) -> dict[str, Any]:
         body.append(_text("Services", weight="Bolder", spacing="Medium"))
         body.extend(_service_lines(verify))
 
-    body.append(_text("Ansible Execution", weight="Bolder", spacing="Medium"))
+    tool_label = (execution.tool if execution else "job").title()
+    body.append(_text(f"{tool_label} Execution", weight="Bolder", spacing="Medium"))
     body.append(
         _facts(
             [
-                ("Job", str(execution.get("job_id", "-"))),
-                ("Template ID", str(execution.get("template_id", "-"))),
-                ("Target Host", str(execution.get("target_host", "-"))),
-                ("Duration", f"{execution.get('duration_seconds', 0)} seconds"),
+                ("Job", execution.job_id if execution else "-"),
+                ("Template ID", execution.template_id if execution else "-"),
+                ("Target Host", execution.target_host if execution else "-"),
+                ("Duration", f"{execution.duration_seconds if execution else 0} seconds"),
                 ("Result", "✅ Successful" if success else "❌ Failed"),
             ]
         )

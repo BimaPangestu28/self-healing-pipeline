@@ -7,14 +7,18 @@ approve -> real rollout restart -> verify -> completion card.
 
 from __future__ import annotations
 
+import json
 import logging
+import os
 from pathlib import Path
 
-from fastapi import Body, FastAPI
+from fastapi import Body, FastAPI, Request
 from fastapi.responses import FileResponse, JSONResponse
 
 from src.approvals.cards import build_approval_card, build_healthcheck_card, build_result_card
-from src.approvals.service import DemoService, HealthReport
+from src.approvals.models import HealthReport
+from src.approvals.service import DemoService
+from src.approvals.teams_endpoint import handle_teams_activity, verify_hmac
 from src.self_healing.config import PipelineConfig
 from src.self_healing.kube import KubeClient
 
@@ -105,3 +109,26 @@ def reject(payload: dict = Body(default={})) -> JSONResponse:
         return JSONResponse({"error": "unknown approval request"}, status_code=404)
     request = service.reject(request_id)
     return JSONResponse({"status": request.status.value, "card": build_result_card(request)})
+
+
+@app.post("/api/teams/messages")
+async def teams_messages(request: Request) -> JSONResponse:
+    """Bot Framework messaging endpoint for Teams Adaptive Card actions.
+
+    Point a Teams bot (or a Power Automate flow) at this URL. Approve/Reject button
+    clicks arrive as an ``adaptiveCard/action`` invoke; the response is a refreshed
+    Adaptive Card that Teams renders in place. When ``TEAMS_OUTGOING_WEBHOOK_SECRET``
+    is set, the HMAC signature on the request is verified.
+    """
+    body = await request.body()
+
+    secret = os.getenv("TEAMS_OUTGOING_WEBHOOK_SECRET", "").strip()
+    if secret and not verify_hmac(secret, body, request.headers.get("authorization")):
+        return JSONResponse({"error": "invalid HMAC signature"}, status_code=401)
+
+    try:
+        activity = json.loads(body or b"{}")
+    except json.JSONDecodeError:
+        return JSONResponse({"error": "invalid JSON"}, status_code=400)
+
+    return JSONResponse(handle_teams_activity(service, activity))

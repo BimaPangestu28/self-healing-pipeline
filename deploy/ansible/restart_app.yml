@@ -1,0 +1,31 @@
+---
+# Remediation playbook: restart the target application to reclaim memory.
+#
+# Mirrors the AION Ansible action "Clear Host Full memory Outsystem". Locally the
+# target is a Kubernetes deployment, so the restart is performed via kubectl. On a
+# real host this task would run the equivalent OS/service restart.
+- name: Restart application to reclaim memory
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars:
+    namespace: self-healing
+    deployment: sample-app
+    timeout_seconds: 120
+  tasks:
+    - name: Trigger rolling restart of the deployment
+      ansible.builtin.command: >-
+        kubectl --namespace {{ namespace }} rollout restart deployment/{{ deployment }}
+      register: restart_result
+      changed_when: true
+
+    - name: Wait for the rollout to complete
+      ansible.builtin.command: >-
+        kubectl --namespace {{ namespace }} rollout status deployment/{{ deployment }}
+        --timeout={{ timeout_seconds }}s
+      register: rollout_status
+      changed_when: false
+
+    - name: Report remediation outcome
+      ansible.builtin.debug:
+        msg: "Remediation complete for {{ deployment }} in {{ namespace }}: {{ rollout_status.stdout }}"
