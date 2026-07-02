@@ -163,10 +163,22 @@ To *post* the initial approval card into a channel, use the incoming webhook
 ## Tests
 
 ```bash
+# Unit tests (fakes, no cluster needed)
 PYTHONPATH=$PWD .venv/bin/python -m pytest \
   tests/test_self_healing.py tests/test_teams_notifications.py \
   tests/test_approvals.py tests/test_teams_endpoint.py -q
 ```
+
+**End-to-end integration tests** drive the *real* FastAPI app (`demo.app:app`) via
+`TestClient` against a *real* cluster (approve triggers a real `kubectl rollout
+restart`). They auto-skip when no cluster is reachable:
+
+```bash
+PYTHONPATH=$PWD .venv/bin/python -m pytest tests/test_integration_e2e.py -v
+```
+
+CI (`.github/workflows/ci.yml`) runs the unit tests on every push and the
+integration tests against an ephemeral **kind** cluster.
 
 `test_self_healing.py` exercises the full detect→fix→validate loop against an in-memory fake
 cluster (no kubectl needed); `test_teams_notifications.py` covers the Adaptive Card builders and

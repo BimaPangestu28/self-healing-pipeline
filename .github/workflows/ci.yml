@@ -22,7 +22,7 @@ jobs:
         # pydantic + httpx + fastapi; no cluster or agent-framework required for tests.
         run: pip install pydantic pydantic-settings "httpx<1.0" fastapi pytest pytest-asyncio
 
-      - name: Run tests
+      - name: Run unit tests
         env:
           PYTHONPATH: .
         run: |
@@ -32,3 +32,26 @@ jobs:
             tests/test_approvals.py \
             tests/test_teams_endpoint.py \
             -q
+
+  integration:
+    name: Integration (kind cluster)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Create kind cluster
+        # Provisions a real single-node Kubernetes cluster and sets the kube context.
+        uses: helm/kind-action@v1.10.0
+
+      - name: Install dependencies
+        run: pip install pydantic pydantic-settings "httpx<1.0" fastapi pytest pytest-asyncio
+
+      - name: Run end-to-end integration tests against the cluster
+        env:
+          PYTHONPATH: .
+        run: python -m pytest tests/test_integration_e2e.py -v
