@@ -28,8 +28,11 @@ logger = logging.getLogger(__name__)
 
 # Memory utilization at or above this percentage is considered NOK.
 MEMORY_NOK_THRESHOLD = 80
-_UNHEALTHY_MEMORY = 85
-_HEALED_MEMORY = 32
+# How much memory to allocate in the target to create a real high-memory state.
+_LEAK_MEGABYTES = 340
+# Fallback values used only when the real cgroup metric cannot be read.
+_FALLBACK_UNHEALTHY_MEMORY = 88
+_FALLBACK_HEALED_MEMORY = 6
 
 
 class DemoService:
@@ -51,27 +54,38 @@ class DemoService:
         self.executor = executor or build_executor(kube, self.config)
         self.host = "INDIGIINPAPP7"
         self.application = "Outsystem"
-        self.memory_percent = _UNHEALTHY_MEMORY
+        # Used only when the real cgroup metric cannot be read.
+        self._fallback_memory = _FALLBACK_UNHEALTHY_MEMORY
         self._requests: dict[str, ApprovalRequest] = {}
 
     # --- target lifecycle ---------------------------------------------------
 
     def reset_target(self) -> HealthReport:
-        """Deploy the sample app healthy and seed the simulated high-memory fault."""
+        """Deploy the target, then create a real high-memory state to remediate."""
         try:
             self.kube.apply(self.config.manifest_path)
-            self.kube.set_deployment_image(
-                self.config.deployment, self.config.container, self.config.good_image
-            )
+            # Start from a fresh pod so a prior leak can't stack and OOM the container.
+            self.kube.restart_rollout(self.config.deployment)
             self.kube.wait_rollout(self.config.deployment, timeout=self.config.rollout_timeout_seconds)
+            # Drive the app into a real high-memory state (held in the pod).
+            self.kube.trigger_memory_pressure(self.config.deployment, _LEAK_MEGABYTES)
         except KubeError as exc:  # pragma: no cover - surfaced to the caller/UI
             logger.warning("reset_target could not prepare the cluster: %s", exc)
-        self.memory_percent = _UNHEALTHY_MEMORY
+        self._fallback_memory = _FALLBACK_UNHEALTHY_MEMORY
         self._requests.clear()
         return self.healthcheck()
 
+    def _read_memory_percent(self) -> int:
+        """Read the real pod memory %, falling back to the last known state."""
+        try:
+            measured = self.kube.pod_memory_percent(self.config.deployment)
+        except KubeError as exc:  # pragma: no cover - defensive
+            logger.warning("memory read failed: %s", exc)
+            measured = None
+        return measured if measured is not None else self._fallback_memory
+
     def healthcheck(self) -> HealthReport:
-        """Probe the target: real deployment readiness + simulated memory metric."""
+        """Probe the target: real deployment readiness + real pod memory metric."""
         try:
             ready = (
                 self.kube.available_replicas(self.config.deployment) >= 1
@@ -81,15 +95,16 @@ class DemoService:
             logger.warning("healthcheck kube read failed: %s", exc)
             ready = False
 
-        memory_ok = self.memory_percent < MEMORY_NOK_THRESHOLD
+        memory_percent = self._read_memory_percent()
+        memory_ok = memory_percent < MEMORY_NOK_THRESHOLD
         services = [
             ServiceCheck(
                 name="Memory Usage",
                 ok=memory_ok,
                 detail=(
-                    f"Memory usage is High: {self.memory_percent}%"
+                    f"Memory usage is High: {memory_percent}%"
                     if not memory_ok
-                    else f"Memory usage normal: {self.memory_percent}%"
+                    else f"Memory usage normal: {memory_percent}%"
                 ),
             ),
             ServiceCheck(name="W3SVC", ok=ready, detail="OK" if ready else "Not serving"),
@@ -99,7 +114,7 @@ class DemoService:
             host=self.host,
             application=self.application,
             healthy=healthy,
-            memory_percent=self.memory_percent,
+            memory_percent=memory_percent,
             deployment_ready=ready,
             services=services,
         )
@@ -156,7 +171,8 @@ class DemoService:
         execution = self.executor.execute(request.action)
         request.execution = execution
         if execution.success:
-            self.memory_percent = _HEALED_MEMORY
+            # Restart freed the held memory; new pod starts at baseline.
+            self._fallback_memory = _FALLBACK_HEALED_MEMORY
         request.verify = self.healthcheck()
         request.status = ApprovalStatus.EXECUTED if execution.success else ApprovalStatus.FAILED
         return request

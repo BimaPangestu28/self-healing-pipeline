@@ -159,6 +159,90 @@ class KubeClient:
             )
         return infos
 
+    # --- real memory metric (via pod cgroup) --------------------------------
+
+    def _first_running_pod(self, deployment: str) -> str | None:
+        """Return the newest Ready, non-terminating pod for a deployment, or None.
+
+        Picking the newest Ready pod (and excluding pods with a deletionTimestamp)
+        avoids racing with a pod that is still terminating from a prior restart.
+        """
+        result = self._run(["get", "pods", "-l", f"app={deployment}", "-o", "json"], check=False)
+        if result.returncode != 0 or not result.stdout.strip():
+            return None
+        try:
+            items = json.loads(result.stdout).get("items", [])
+        except json.JSONDecodeError:
+            return None
+
+        candidates: list[tuple[str, str]] = []
+        for item in items:
+            metadata = item.get("metadata", {})
+            status = item.get("status", {})
+            if metadata.get("deletionTimestamp"):
+                continue
+            if status.get("phase") != "Running":
+                continue
+            container_statuses = status.get("containerStatuses") or []
+            if container_statuses and not all(cs.get("ready") for cs in container_statuses):
+                continue
+            candidates.append((metadata.get("creationTimestamp", ""), metadata.get("name", "")))
+
+        if not candidates:
+            return None
+        candidates.sort()  # ISO timestamps sort chronologically; newest is last
+        return candidates[-1][1] or None
+
+    def _exec_read(self, pod: str, shell_command: str) -> str | None:
+        """Run a shell command in a pod and return its stripped stdout, or None."""
+        result = self._run(
+            ["exec", pod, "--", "sh", "-c", shell_command], check=False, timeout=15
+        )
+        if result.returncode != 0:
+            return None
+        return result.stdout.strip()
+
+    def pod_memory_percent(self, deployment: str) -> int | None:
+        """Return a pod's memory usage as a percentage of its limit, read from cgroup.
+
+        Reads the container cgroup (v2 first, then v1) inside a Running pod, so the
+        value is the real, current memory usage — no metrics-server lag. Returns
+        None when it cannot be determined (e.g. no pod, no shell, no limit set).
+        """
+        pod = self._first_running_pod(deployment)
+        if not pod:
+            return None
+
+        used = self._exec_read(pod, "cat /sys/fs/cgroup/memory.current 2>/dev/null")
+        limit = self._exec_read(pod, "cat /sys/fs/cgroup/memory.max 2>/dev/null")
+        if used is None or not limit or limit == "max":
+            # cgroup v1 fallback
+            used = self._exec_read(pod, "cat /sys/fs/cgroup/memory/memory.usage_in_bytes 2>/dev/null")
+            limit = self._exec_read(pod, "cat /sys/fs/cgroup/memory/memory.limit_in_bytes 2>/dev/null")
+
+        try:
+            used_bytes = int(used)
+            limit_bytes = int(limit)
+        except (TypeError, ValueError):
+            return None
+        if limit_bytes <= 0:
+            return None
+        return max(0, min(100, round(used_bytes / limit_bytes * 100)))
+
+    def trigger_memory_pressure(self, deployment: str, megabytes: int) -> bool:
+        """Ask the target app (via its pod) to allocate and hold N MB of memory."""
+        pod = self._first_running_pod(deployment)
+        if not pod:
+            return False
+        code = (
+            "import urllib.request;"
+            f"urllib.request.urlopen('http://localhost:8080/leak?mb={megabytes}', timeout=10).read()"
+        )
+        result = self._run(
+            ["exec", pod, "--", "python", "-c", code], check=False, timeout=30
+        )
+        return result.returncode == 0
+
     # --- mutating remediation ----------------------------------------------
 
     def set_deployment_image(self, deployment: str, container: str, image: str) -> None:

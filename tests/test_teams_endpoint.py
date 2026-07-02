@@ -20,6 +20,7 @@ class FakeKube:
     def __init__(self) -> None:
         self.namespace = CONFIG.namespace
         self.restart_calls = 0
+        self.memory = 88
 
     def apply(self, manifest_path: str) -> None:
         pass
@@ -33,8 +34,16 @@ class FakeKube:
     def ready_endpoint_count(self, service: str) -> int:
         return 1
 
+    def pod_memory_percent(self, deployment: str) -> int:
+        return self.memory
+
+    def trigger_memory_pressure(self, deployment: str, megabytes: int) -> bool:
+        self.memory = 88
+        return True
+
     def restart_rollout(self, deployment: str) -> None:
         self.restart_calls += 1
+        self.memory = 6
 
     def wait_rollout(self, deployment: str, timeout: int = 120) -> bool:
         return True

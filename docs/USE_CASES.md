@@ -2,7 +2,10 @@
 
 What each part of this project demonstrates, how to trigger it, and what "success"
 looks like. All of these run against a real local Kubernetes cluster (colima/k3s or
-kind); only the memory metric is simulated — remediation actions are real.
+kind). Both the remediation and the memory metric are **real**: the demo target
+(`memory-app`) allocates actual memory on `/leak`, the metric is read from the pod
+**cgroup** (`/sys/fs/cgroup/memory.current` ÷ `memory.max`), and a rollout restart
+frees it.
 
 ## 1. Approval-gated remediation (the AION memory flow)
 
@@ -78,6 +81,11 @@ is LLM-generated (matching how AION phrases its analysis).
 | Element | Local demo | Production mapping |
 |---------|-----------|--------------------|
 | Remediation (restart) | **Real** k8s rollout restart / real ansible-playbook | AWX job on the real host |
-| Memory metric (85%→32%) | Simulated (deterministic) | Read by the Ansible healthcheck template |
-| Target host | k8s `sample-app` (traefik/whoami) | Windows/IIS host, OutSystems |
+| Memory metric | **Real** — allocated in `memory-app`, read from the pod cgroup | Real host metric via monitoring / Ansible healthcheck |
+| Analysis narrative | **Real LLM** (Azure OpenAI / DeepSeek) or template fallback | LLM (AION) |
+| Target | k8s `memory-app` (demo) / `sample-app` whoami (image-drift pipeline) | Windows/IIS host, OutSystems |
 | Teams cards | Real Adaptive Cards (web renderer + invoke contract) | Real Teams tenant via bot / Power Automate |
+
+> The only non-real element left is host **identity** (`INDIGIINPAPP7`, template ids
+> 9665/9666, IP) — hardcoded to mirror the AION screenshots. In production these come
+> from your inventory/CMDB and the alert payload.

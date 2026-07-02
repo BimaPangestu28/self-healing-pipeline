@@ -28,9 +28,19 @@ logger = logging.getLogger(__name__)
 _STATIC_DIR = Path(__file__).parent / "static"
 
 
+_DEMO_MANIFEST = str(Path(__file__).resolve().parents[1] / "deploy" / "memory-app.yaml")
+
+
 def _build_service() -> DemoService:
-    """Construct the demo service bound to the local cluster."""
-    config = PipelineConfig()
+    """Construct the demo service bound to the memory-app target on the cluster."""
+    config = PipelineConfig(
+        deployment="memory-app",
+        container="app",
+        service="memory-app",
+        good_image="self-healing-memory-app:local",
+        broken_image="self-healing-memory-app:local",
+        manifest_path=_DEMO_MANIFEST,
+    )
     kube = KubeClient(namespace=config.namespace)
     return DemoService(kube=kube, config=config)
 

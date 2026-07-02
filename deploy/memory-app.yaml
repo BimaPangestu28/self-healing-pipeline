@@ -1,0 +1,62 @@
+# Approval-demo target: an app with a real, controllable memory footprint.
+#
+# Healthy at baseline (~5% of its limit). The demo drives it to a high memory
+# state via GET /leak, and remediation (rollout restart) frees the memory — so
+# the memory metric read from the pod cgroup is genuinely real, not simulated.
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: self-healing
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: memory-app
+  namespace: self-healing
+  labels:
+    app: memory-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: memory-app
+  template:
+    metadata:
+      labels:
+        app: memory-app
+    spec:
+      containers:
+        - name: app
+          image: self-healing-memory-app:local
+          imagePullPolicy: IfNotPresent # use the locally-built image (colima docker)
+          ports:
+            - containerPort: 8080
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            initialDelaySeconds: 2
+            periodSeconds: 5
+          resources:
+            requests:
+              cpu: 20m
+              memory: 64Mi
+            limits:
+              cpu: 500m
+              memory: 400Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: memory-app
+  namespace: self-healing
+  labels:
+    app: memory-app
+spec:
+  selector:
+    app: memory-app
+  ports:
+    - name: http
+      port: 8080
+      targetPort: 8080

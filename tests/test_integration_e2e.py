@@ -64,7 +64,7 @@ def test_full_approval_flow_heals_real_cluster(client):
     reset = client.post("/api/demo/reset")
     assert reset.status_code == 200
     assert reset.json()["healthy"] is False
-    assert reset.json()["memory_percent"] == 85
+    assert reset.json()["memory_percent"] >= 80  # real cgroup metric after the leak
 
     # ② Approval: an action is recommended and a request opened.
     approval = client.post("/api/demo/request-approval").json()
@@ -80,7 +80,7 @@ def test_full_approval_flow_heals_real_cluster(client):
     # ④ Verify: a fresh healthcheck reports healthy after the fix.
     healthcheck = client.post("/api/demo/healthcheck").json()
     assert healthcheck["healthy"] is True
-    assert healthcheck["memory_percent"] == 32
+    assert healthcheck["memory_percent"] < 80  # memory freed by the restart
 
 
 def test_full_teams_invoke_flow_heals_real_cluster(client):

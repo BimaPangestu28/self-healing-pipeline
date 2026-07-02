@@ -48,6 +48,13 @@ jobs:
       - name: Create kind cluster
         # Provisions a real single-node Kubernetes cluster and sets the kube context.
         uses: helm/kind-action@v1.10.0
+        with:
+          cluster_name: kind
+
+      - name: Build and load the memory-app image into kind
+        run: |
+          docker build -t self-healing-memory-app:local deploy/memory-app
+          kind load docker-image self-healing-memory-app:local --name kind
 
       - name: Install dependencies
         run: pip install pydantic pydantic-settings "httpx<1.0" fastapi pytest pytest-asyncio

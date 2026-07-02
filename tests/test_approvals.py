@@ -21,6 +21,7 @@ class FakeKube:
         self.restart_calls = 0
         self.applied = False
         self.image = CONFIG.good_image
+        self.memory = 88  # starts high; restart heals it
 
     def apply(self, manifest_path: str) -> None:
         self.applied = True
@@ -34,8 +35,16 @@ class FakeKube:
     def ready_endpoint_count(self, service: str) -> int:
         return 1
 
+    def pod_memory_percent(self, deployment: str) -> int:
+        return self.memory
+
+    def trigger_memory_pressure(self, deployment: str, megabytes: int) -> bool:
+        self.memory = 88
+        return True
+
     def restart_rollout(self, deployment: str) -> None:
         self.restart_calls += 1
+        self.memory = 6  # new pod starts at baseline
 
     def wait_rollout(self, deployment: str, timeout: int = 120) -> bool:
         return True
@@ -53,7 +62,7 @@ def test_healthcheck_starts_unhealthy_due_to_memory():
     service = _service()
     report = service.healthcheck()
     assert report.healthy is False
-    assert report.memory_percent == 85
+    assert report.memory_percent == 88
     memory = next(s for s in report.services if s.name == "Memory Usage")
     assert memory.ok is False
 
