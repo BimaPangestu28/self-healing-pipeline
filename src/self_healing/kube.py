@@ -13,6 +13,8 @@ import logging
 import subprocess
 from dataclasses import dataclass
 
+from src import tool_trace
+
 logger = logging.getLogger(__name__)
 
 
@@ -71,6 +73,14 @@ class KubeClient:
             raise KubeError(f"kubectl timed out: {' '.join(args)}") from exc
         except FileNotFoundError as exc:
             raise KubeError(f"kubectl executable not found: {self.kubectl}") from exc
+
+        produced = (result.stdout or result.stderr or "").strip()
+        tool_trace.record(
+            tool="kubectl",
+            input=" ".join(args),
+            output=produced or "(no output)",
+            ok=result.returncode == 0,
+        )
 
         if check and result.returncode != 0:
             raise KubeError(

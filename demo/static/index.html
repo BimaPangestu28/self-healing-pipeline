@@ -31,11 +31,15 @@
     .chip.l { background:#faf0e6; color:#9a5b1f; }
     .log { flex:1; background:#0f1020; min-height:0; }
     .log .loghead { color:#fff; background:#1a1c33; padding:7px 14px; font-size:12px; }
-    #trace-body { height:calc(100% - 32px); overflow:auto; padding:6px 0;
+    #trace-body { height:calc(100% - 32px); overflow:auto; padding:4px 0;
                   font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace; color:#cdd3ff; }
-    #trace-body .line { padding:0 12px; white-space:pre-wrap; word-break:break-word; }
-    #trace-body .line.WARNING { color:#ffcf6b; } #trace-body .line.ERROR { color:#ff8b8b; }
-    #trace-body .lg { color:#7f86c9; }
+    .tev { padding:6px 12px; border-bottom:1px solid #1c1e3a; }
+    .tev .th { font-weight:600; color:#aab0ee; }
+    .tev .io { display:flex; gap:6px; margin-top:2px; }
+    .tev .k { color:#6b72b8; flex-shrink:0; width:22px; }
+    .tev .v { color:#cdd3ff; white-space:pre-wrap; word-break:break-word; }
+    .tev .v.out { color:#9fe6bf; }
+    .tev.bad .v.out { color:#ff8b8b; }
 
     /* CENTER chat */
     .chat { flex:1; min-width:0; display:flex; flex-direction:column; border-right:1px solid #eee; }
@@ -93,7 +97,7 @@
         </ol>
       </div>
       <div class="panel log">
-        <div class="loghead">⚙️ Live activity (real ops)</div>
+        <div class="loghead">🔧 Tool usage · input → output</div>
         <div id="trace-body"></div>
       </div>
     </aside>
@@ -198,11 +202,15 @@
     function esc(s){ return s.replace(/[&<>]/g,(c)=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c])); }
     async function pollTrace() {
       try {
-        const res = await fetch("/api/demo/logs?after="+traceCursor); const data = await res.json(); traceCursor = data.cursor;
-        (data.entries||[]).forEach((e)=>{ const line=document.createElement("div"); line.className="line "+e.level;
-          const nm=e.logger.replace(/^src\./,"").replace(/^demo\.?/,"");
-          line.innerHTML='<span class="lg">'+esc(nm)+"</span>  "+esc(e.message); traceBody.appendChild(line); });
-        if (data.entries && data.entries.length) traceBody.scrollTop = traceBody.scrollHeight;
+        const res = await fetch("/api/demo/tools?after="+traceCursor); const data = await res.json(); traceCursor = data.cursor;
+        (data.events||[]).forEach((e)=>{
+          const d=document.createElement("div"); d.className="tev"+(e.ok?"":" bad");
+          d.innerHTML = '<div class="th">'+(e.ok?"🔧":"⚠️")+" "+esc(e.tool)+"</div>"
+            + '<div class="io"><span class="k">in</span><span class="v">'+esc(e.input)+"</span></div>"
+            + '<div class="io"><span class="k">out</span><span class="v out">'+esc(e.output)+"</span></div>";
+          traceBody.appendChild(d);
+        });
+        if (data.events && data.events.length) traceBody.scrollTop = traceBody.scrollHeight;
       } catch (e) {}
     }
 

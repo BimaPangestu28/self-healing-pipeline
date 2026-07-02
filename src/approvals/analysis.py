@@ -60,9 +60,16 @@ def build_analysis(report: HealthReport, client=None) -> str:
     llm = client if client is not None else build_llm_client()
     if llm is None:
         return _template_analysis(report)
+    prompt = _prompt(report)
     try:
-        text = llm.chat(_SYSTEM_PROMPT, _prompt(report))
-        return text.strip() or _template_analysis(report)
+        text = llm.chat(_SYSTEM_PROMPT, prompt)
+        result = text.strip() or _template_analysis(report)
     except Exception as exc:  # network/parse/etc — never break the flow
         logger.warning("LLM analysis failed (%s); using template fallback", exc)
-        return _template_analysis(report)
+        result = _template_analysis(report)
+
+    from src import tool_trace
+
+    provider = getattr(llm, "provider", "llm")
+    tool_trace.record(tool=f"LLM · analysis ({provider})", input=prompt, output=result)
+    return result

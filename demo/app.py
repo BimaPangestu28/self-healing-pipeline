@@ -100,6 +100,16 @@ def activity_logs(after: int = 0) -> dict:
     return {"cursor": cursor, "entries": entries}
 
 
+@app.get("/api/demo/tools", tags=["Observability"], summary="Tool usages with input + output (kubectl, LLM)")
+def tool_usages(after: int = 0) -> dict:
+    """Return tool-usage events (each with its input and output) newer than ``after``."""
+    from src import tool_trace
+
+    events = tool_trace.events_after(after)
+    cursor = events[-1]["id"] if events else after
+    return {"cursor": cursor, "events": events}
+
+
 @app.post("/api/demo/reset", tags=["Demo"], summary="Deploy the target and create a real high-memory incident")
 def reset() -> dict:
     """Redeploy the sample app healthy and seed the simulated high-memory fault."""

@@ -115,6 +115,14 @@ class ChatAgent:
             for call in reply.tool_calls:
                 logger.info("agent: LLM requested tool '%s'", call.name)
                 result, card = self._dispatch(call.name, call.arguments)
+                from src import tool_trace
+
+                tool_trace.record(
+                    tool=f"LLM tool · {call.name}",
+                    input=call.arguments or "{}",
+                    output=json.dumps(result, ensure_ascii=False),
+                    ok="error" not in result,
+                )
                 if card is not None:
                     cards.append(card)
                 messages.append(
