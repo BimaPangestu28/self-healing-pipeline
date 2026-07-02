@@ -1,0 +1,482 @@
+[
+  {
+    "id": 1,
+    "app": "aka-be-obe-stg",
+    "error": "Bad Request Error - 400",
+    "severity": "LOW",
+    "category": "input_validation",
+    "explanation": "The request payload or parameters are invalid and trigger a 400 response."
+  },
+  {
+    "id": 2,
+    "app": "aka-be-obe-stg",
+    "error": "Unauthorized Error - 401",
+    "severity": "LOW",
+    "category": "authentication",
+    "explanation": "Authentication is missing or invalid, resulting in a 401 response."
+  },
+  {
+    "id": 3,
+    "app": "aka-be-obe-stg",
+    "error": "Forbidden Error - 403",
+    "severity": "LOW",
+    "category": "authorization",
+    "explanation": "The authenticated user lacks permission to access the resource (403)."
+  },
+  {
+    "id": 4,
+    "app": "aka-be-obe-stg",
+    "error": "Not Found Error - 404",
+    "severity": "LOW",
+    "category": "resource_not_found",
+    "explanation": "The requested resource does not exist, producing a 404 response."
+  },
+  {
+    "id": 5,
+    "app": "aka-be-obe-stg",
+    "error": "Conflict Error - 409",
+    "severity": "LOW",
+    "category": "data_conflict",
+    "explanation": "The request conflicts with current state (e.g., duplicate or conflicting data)."
+  },
+  {
+    "id": 6,
+    "app": "aka-be-obe-stg",
+    "error": "Internal Server Error - 500",
+    "severity": "HIGH",
+    "category": "internal_server_error",
+    "explanation": "An unhandled server-side error occurred, leading to a 500 response."
+  },
+  {
+    "id": 7,
+    "app": "aka-be-obe-stg",
+    "error": "Division by Zero calculation",
+    "severity": "HIGH",
+    "category": "arithmetic_error",
+    "explanation": "An arithmetic operation attempted to divide by zero."
+  },
+  {
+    "id": 8,
+    "app": "aka-be-obe-stg",
+    "error": "Prisma Unique Constraint Violation",
+    "severity": "HIGH",
+    "category": "database_unique_constraint",
+    "explanation": "A create or update violates a database unique constraint."
+  },
+  {
+    "id": 9,
+    "app": "aka-be-obe-stg",
+    "error": "Prisma Error Code: P2002 - {",
+    "severity": "HIGH",
+    "category": "database_unique_constraint",
+    "explanation": "Prisma reports a P2002 unique constraint violation from the database."
+  },
+  {
+    "id": 10,
+    "app": "aka-be-obe-stg",
+    "error": "Prisma Error Meta: - {",
+    "severity": "HIGH",
+    "category": "database_unique_constraint",
+    "explanation": "Prisma provides metadata (model/fields) about a unique constraint failure."
+  },
+  {
+    "id": 11,
+    "app": "aka-be-obe-stg",
+    "error": "Invalid `this.prisma.client.curriculumPeriode.create()` invocation in",
+    "severity": "HIGH",
+    "category": "database_unique_constraint",
+    "explanation": "A Prisma create call fails due to invalid or conflicting unique field values."
+  },
+  {
+    "id": 12,
+    "app": "aka-be-obe-stg",
+    "error": "Prisma Foreign Key Constraint Violation",
+    "severity": "HIGH",
+    "category": "database_foreign_key_constraint",
+    "explanation": "A write fails because a required foreign key reference does not exist."
+  },
+  {
+    "id": 13,
+    "app": "aka-be-obe-stg",
+    "error": "Prisma Delete Restricted Error",
+    "severity": "HIGH",
+    "category": "database_delete_restriction",
+    "explanation": "A delete operation is blocked due to relational constraints."
+  },
+  {
+    "id": 14,
+    "app": "aka-be-obe-stg",
+    "error": "Prisma Invalid Query Error",
+    "severity": "HIGH",
+    "category": "database_query_error",
+    "explanation": "A raw or generated query is invalid or references missing relations."
+  },
+  {
+    "id": 15,
+    "app": "aka-be-obe-stg",
+    "error": "Prisma Error Code: P2010 - {",
+    "severity": "HIGH",
+    "category": "database_query_error",
+    "explanation": "Prisma reports a P2010 raw query failure from the database."
+  },
+  {
+    "id": 16,
+    "app": "aka-be-obe-stg",
+    "error": "Prisma Record Not Found Error",
+    "severity": "HIGH",
+    "category": "database_record_not_found",
+    "explanation": "The requested record does not exist during update or delete."
+  },
+  {
+    "id": 17,
+    "app": "aka-be-obe-stg",
+    "error": "Prisma Error Code: P2025 - {",
+    "severity": "HIGH",
+    "category": "database_record_not_found",
+    "explanation": "Prisma reports a P2025 record-not-found error."
+  },
+  {
+    "id": 18,
+    "app": "aka-be-obe-stg",
+    "error": "Prisma Validation Error",
+    "severity": "HIGH",
+    "category": "database_validation_error",
+    "explanation": "A Prisma operation fails validation due to missing or invalid fields."
+  },
+  {
+    "id": 19,
+    "app": "aka-be-obe-stg",
+    "error": "Prisma Validation Error: - {",
+    "severity": "HIGH",
+    "category": "database_validation_error",
+    "explanation": "Prisma reports validation errors for the provided data."
+  },
+  {
+    "id": 20,
+    "app": "aka-be-obe-stg",
+    "error": "Invalid `this.prisma.client.course.create()` invocation in",
+    "severity": "HIGH",
+    "category": "database_validation_error",
+    "explanation": "A Prisma create call fails because required fields are missing or invalid."
+  },
+  {
+    "id": 21,
+    "app": "aka-be-obe-stg",
+    "error": "Invalid `this.prisma.client.course.update()` invocation in",
+    "severity": "HIGH",
+    "category": "database_validation_error",
+    "explanation": "A Prisma update call fails due to invalid or missing update data."
+  },
+  {
+    "id": 22,
+    "app": "aka-be-obe-stg",
+    "error": "Prisma Connection Timeout",
+    "severity": "HIGH",
+    "category": "database_timeout",
+    "explanation": "The database connection or query exceeds the configured timeout."
+  },
+  {
+    "id": 23,
+    "app": "aka-be-obe-stg",
+    "error": "Prisma Transaction Error",
+    "severity": "HIGH",
+    "category": "database_transaction_error",
+    "explanation": "A Prisma transaction fails during a multi-step operation."
+  },
+  {
+    "id": 24,
+    "app": "aka-be-obe-stg",
+    "error": "Prisma Transaction Validation Error: - {",
+    "severity": "HIGH",
+    "category": "database_transaction_error",
+    "explanation": "Prisma reports validation errors during a transaction."
+  },
+  {
+    "id": 25,
+    "app": "aka-be-obe-stg",
+    "error": "Invalid `tx.course.create()` invocation in",
+    "severity": "HIGH",
+    "category": "database_transaction_error",
+    "explanation": "A Prisma transaction create call fails due to invalid input data."
+  },
+  {
+    "id": 26,
+    "app": "aka-be-obe-stg",
+    "error": "Promise Rejection",
+    "severity": "HIGH",
+    "category": "async_failure",
+    "explanation": "An async operation rejects without being handled properly."
+  },
+  {
+    "id": 27,
+    "app": "aka-be-obe-stg",
+    "error": "Unhandled Exception",
+    "severity": "HIGH",
+    "category": "unhandled_exception",
+    "explanation": "An exception is thrown without a handler, crashing the request flow."
+  },
+  {
+    "id": 28,
+    "app": "aka-be-obe-stg",
+    "error": "Timeout Simulation",
+    "severity": "HIGH",
+    "category": "timeout",
+    "explanation": "A simulated request or operation exceeds its timeout threshold."
+  },
+  {
+    "id": 29,
+    "app": "aka-be-obe-stg",
+    "error": "Error with Stack Trace",
+    "severity": "HIGH",
+    "category": "stack_trace",
+    "explanation": "An error is raised intentionally with a full stack trace for debugging."
+  },
+  {
+    "id": 30,
+    "app": "aka-be-obe-stg",
+    "error": "Custom Error with code 23",
+    "severity": "HIGH",
+    "category": "custom_error",
+    "explanation": "The application emits a custom error with code 23."
+  },
+  {
+    "id": 31,
+    "app": "aka-be-obe-stg",
+    "error": "Custom Error with code 43",
+    "severity": "HIGH",
+    "category": "custom_error",
+    "explanation": "The application emits a custom error with code 43."
+  },
+  {
+    "id": 32,
+    "app": "aka-be-obe-stg",
+    "error": "Custom Error with code 50",
+    "severity": "HIGH",
+    "category": "custom_error",
+    "explanation": "The application emits a custom error with code 50."
+  },
+  {
+    "id": 33,
+    "app": "aka-be-obe-stg",
+    "error": "Custom Error with code 500",
+    "severity": "HIGH",
+    "category": "custom_error",
+    "explanation": "The application emits a custom error with code 500."
+  },
+  {
+    "id": 34,
+    "app": "aka-be-obe-stg",
+    "error": "Custom Error with code NaN",
+    "severity": "HIGH",
+    "category": "custom_error",
+    "explanation": "The application emits a custom error with a non-numeric code."
+  },
+  {
+    "id": 35,
+    "app": "kem-be-asrama-stg",
+    "error": "Undefined variable $residentNumber",
+    "severity": "HIGH",
+    "category": "undefined_variable",
+    "explanation": "A controller references a variable that was never defined in scope."
+  },
+  {
+    "id": 36,
+    "app": "kem-be-asrama-stg",
+    "error": "POST /dormitory/<resident_id> returned HTTP 500",
+    "severity": "HIGH",
+    "category": "internal_server_error",
+    "explanation": "The dormitory endpoint fails with an internal server error during a POST request, indicating a server-side application failure while processing the request."
+  },
+  {
+    "id": 37,
+    "app": "kem-be-asrama-stg",
+    "error": "Class \"App\\\\Http\\\\Controllers\\\\Dormitory\\\\Reservacation\" not found",
+    "severity": "HIGH",
+    "category": "class_not_found",
+    "explanation": "The controller references a PHP class that cannot be autoloaded, typically due to a typo, missing import, or missing class file."
+  },
+  {
+    "id": 38,
+    "app": "aka-be-obe-stg",
+    "error": "Testing Prisma Delete Restricted Error - P2014",
+    "severity": "HIGH",
+    "category": "database_relation_violation",
+    "explanation": "Prisma reports a P2014 error indicating that the change would violate a required relation between models, typically when deleting a record that is still referenced by another model."
+  },
+  {
+    "id": 39,
+    "app": "aka-be-obe-stg",
+    "error": "Prisma Error Code: P2010 - Invalid `prisma.$queryRaw()` invocation: Raw query failed. Code: N/A. Message: Failed to deserialize",
+    "severity": "HIGH",
+    "category": "database_query_error",
+    "explanation": "Prisma reports a P2010 error where a raw SQL query failed, typically due to a deserialization failure when the query result does not match the expected type or format."
+  },
+  {
+    "id": 40,
+    "app": "aka-be-obe-stg",
+    "error": "Invalid Field: PrismaClientValidationError (N/A)",
+    "severity": "HIGH",
+    "category": "database_validation_error",
+    "explanation": "Prisma raises a PrismaClientValidationError due to an invalid or unknown field being used in a query, typically caused by a typo or referencing a field not defined in the Prisma schema."
+  },
+  {
+    "id": 41,
+    "app": "aka-be-obe-stg",
+    "error": "Testing Not Found Error - 404",
+    "severity": "LOW",
+    "category": "resource_not_found",
+    "explanation": "The requested resource does not exist, producing a 404 response."
+  },
+  {
+    "id": 42,
+    "app": "aka-be-obe-stg",
+    "error": "This is an ERROR log message",
+    "severity": "LOW",
+    "category": "generic_error_log",
+    "explanation": "A generic error log message emitted for testing or debugging purposes, with no specific failure context."
+  },
+  {
+    "id": 43,
+    "app": "aka-be-obe-stg",
+    "error": "Testing Internal Server Error - 500",
+    "severity": "HIGH",
+    "category": "internal_server_error",
+    "explanation": "An unhandled server-side error occurred, leading to a 500 response."
+  },
+  {
+    "id": 44,
+    "app": "aka-be-obe-stg",
+    "error": "Testing Forbidden Error - 403",
+    "severity": "LOW",
+    "category": "authorization",
+    "explanation": "The authenticated user lacks permission to access the resource (403)."
+  },
+  {
+    "id": 45,
+    "app": "k8s",
+    "error": "Back-off restarting failed container oom in pod",
+    "severity": "HIGH",
+    "category": "oom_crash_loop",
+    "explanation": "A container is in a CrashLoopBackOff state due to an out-of-memory (OOM) kill, indicating the container exceeded its memory limits and Kubernetes is repeatedly restarting it."
+  },
+  {
+    "id": 46,
+    "app": "k8s",
+    "error": "Liveness probe failed: Get",
+    "severity": "HIGH",
+    "category": "liveness_probe_failure",
+    "explanation": "The Kubernetes liveness probe HTTP GET request failed, indicating the container is unresponsive. Kubernetes will restart the container after consecutive probe failures."
+  },
+  {
+    "id": 47,
+    "app": "k8s",
+    "error": "Back-off restarting failed container probe-fail in pod",
+    "severity": "HIGH",
+    "category": "probe_crash_loop",
+    "explanation": "A container is in a CrashLoopBackOff state due to repeated probe failures, indicating the container is unable to pass its health checks and Kubernetes is repeatedly restarting it."
+  },
+  {
+    "id": 48,
+    "app": "k8s",
+    "error": "Error: ErrImagePull",
+    "severity": "HIGH",
+    "category": "image_pull_error",
+    "explanation": "Kubernetes failed to pull the container image from the registry, typically due to an incorrect image name/tag, missing credentials, or network issues."
+  },
+  {
+    "id": 49,
+    "app": "k8s",
+    "error": "Error: ImagePullBackOff",
+    "severity": "HIGH",
+    "category": "image_pull_error",
+    "explanation": "Kubernetes is backing off from repeated failed attempts to pull the container image, indicating a persistent image pull failure due to an invalid image reference, missing registry credentials, or network connectivity issues."
+  },
+  {
+    "id": 50,
+    "app": "k8s",
+    "error": "Back-off restarting failed container crash in pod",
+    "severity": "HIGH",
+    "category": "crash_loop",
+    "explanation": "A container is in a CrashLoopBackOff state due to repeated crashes, indicating the application is failing to start or crashing immediately after startup, and Kubernetes is repeatedly restarting it."
+  },
+  {
+    "id": 51,
+    "app": "aka-be-obe-stg",
+    "error": "Testing Prisma Invalid Query Error",
+    "severity": "HIGH",
+    "category": "database_query_error",
+    "explanation": "A Prisma query is invalid due to incorrect syntax, missing relations, or referencing non-existent fields in the schema."
+  },
+  {
+    "id": 52,
+    "app": "aka-be-obe-stg",
+    "error": "Testing Prisma Record Not Found Error - P2025",
+    "severity": "HIGH",
+    "category": "database_record_not_found",
+    "explanation": "Prisma reports a P2025 error indicating the requested record does not exist during an update or delete operation."
+  },
+  {
+    "id": 53,
+    "app": "aka-be-obe-stg",
+    "error": "Testing Prisma Unique Constraint Violation - P2002",
+    "severity": "HIGH",
+    "category": "database_unique_constraint",
+    "explanation": "Prisma reports a P2002 unique constraint violation, indicating a create or update attempted to insert a duplicate value on a field with a unique constraint."
+  },
+  {
+    "id": 54,
+    "app": "aka-be-obe-stg",
+    "error": "Prisma Validation Error: Invalid `this.prisma.client.course.create()` invocation",
+    "severity": "HIGH",
+    "category": "database_validation_error",
+    "explanation": "Prisma reports a validation error during a course create invocation, indicating required fields are missing or provided data does not match the expected schema types."
+  },
+  {
+    "id": 55,
+    "app": "aka-be-obe-stg",
+    "error": "Testing Promise Rejection",
+    "severity": "HIGH",
+    "category": "async_failure",
+    "explanation": "An async operation rejects without being handled properly, indicating an unhandled promise rejection in the application."
+  },
+  {
+    "id": 56,
+    "app": "aka-be-obe-stg",
+    "error": "Async operation failed",
+    "severity": "HIGH",
+    "category": "async_failure",
+    "explanation": "An async operation threw an unhandled error, caught by the NestJS ExceptionsHandler, indicating a promise rejection or failed asynchronous task in the controller."
+  },
+  {
+    "id": 57,
+    "app": "kem-be-asrama-stg",
+    "error": "The resource owner or authorization server denied the request. OAuthServerException code 9",
+    "severity": "HIGH",
+    "category": "oauth_authorization_denied",
+    "explanation": "The OAuth2 authorization server denied the request with OAuthServerException code 9, typically caused by invalid credentials, expired tokens, or insufficient grant permissions in the League OAuth2 server."
+  },
+  {
+    "id": 58,
+    "app": "aka-be-obe-stg",
+    "error": "Testing Timeout Simulation",
+    "severity": "HIGH",
+    "category": "timeout",
+    "explanation": "A simulated request or operation exceeds its timeout threshold, indicating a potential timeout handling issue in the application."
+  },
+  {
+    "id": 59,
+    "app": "aka-be-obe-stg",
+    "error": "Testing Unauthorized Error - 401",
+    "severity": "LOW",
+    "category": "authentication",
+    "explanation": "Authentication is missing or invalid, resulting in a 401 response."
+  },
+  {
+    "id": 60,
+    "app": "aka-be-obe-stg",
+    "error": "Testing Unhandled Exception",
+    "severity": "HIGH",
+    "category": "unhandled_exception",
+    "explanation": "An exception is thrown without a handler, crashing the request flow."
+  }
+]

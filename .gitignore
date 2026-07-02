@@ -1,0 +1,23 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+/data/vectorized_errors_dataset.json
+
+# Virtual environments
+.venv
+
+.claude
+dify_flow
+.env
+.pytest_cache
+
+/data/*.db
+/data/*.log
+*.db
+*.csv
+

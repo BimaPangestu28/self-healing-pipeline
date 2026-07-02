@@ -1,0 +1,61 @@
+# Sample workload for the self-healing pipeline demo.
+#
+# It is deliberately deployed with a BROKEN image tag (traefik/whoami:v9.9.9-broken-drift)
+# so the pipeline can demonstrate: detect (ImagePullBackOff / no endpoints) ->
+# classify (RB-INFRA-001) -> fix (reset image to known-good) -> validate.
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: self-healing
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sample-app
+  namespace: self-healing
+  labels:
+    app: sample-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: sample-app
+  template:
+    metadata:
+      labels:
+        app: sample-app
+    spec:
+      containers:
+        - name: whoami
+          image: traefik/whoami:v9.9.9-broken-drift # intentionally broken tag
+          ports:
+            - containerPort: 80
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 2
+            periodSeconds: 5
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              cpu: 100m
+              memory: 64Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: sample-app
+  namespace: self-healing
+  labels:
+    app: sample-app
+spec:
+  selector:
+    app: sample-app
+  ports:
+    - name: http
+      port: 80
+      targetPort: 80

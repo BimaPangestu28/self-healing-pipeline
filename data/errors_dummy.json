@@ -1,0 +1,362 @@
+[
+  {
+    "id": 1,
+    "app": "laravel",
+    "error": "Class 'App\\Http\\Controllers\\HomeController' not found",
+    "severity": "LOW"
+  },
+  {
+    "id": 2,
+    "app": "laravel",
+    "error": "Target class [App\\Services\\UserService] does not exist",
+    "severity": "LOW"
+  },
+  {
+    "id": 3,
+    "app": "laravel",
+    "error": "SQLSTATE[42S02]: Base table or view not found",
+    "severity": "LOW"
+  },
+  {
+    "id": 4,
+    "app": "laravel",
+    "error": "SQLSTATE[23000]: Integrity constraint violation",
+    "severity": "LOW"
+  },
+  {
+    "id": 5,
+    "app": "laravel",
+    "error": "Method Illuminate\\Database\\Eloquent\\Collection::paginate does not exist",
+    "severity": "LOW"
+  },
+  {
+    "id": 6,
+    "app": "laravel",
+    "error": "Call to undefined method App\\Models\\User::orders",
+    "severity": "LOW"
+  },
+  {
+    "id": 7,
+    "app": "laravel",
+    "error": "Undefined variable $user",
+    "severity": "LOW"
+  },
+  {
+    "id": 8,
+    "app": "laravel",
+    "error": "Undefined index: email",
+    "severity": "LOW"
+  },
+  {
+    "id": 9,
+    "app": "laravel",
+    "error": "Trying to get property 'name' of non-object",
+    "severity": "LOW"
+  },
+  {
+    "id": 10,
+    "app": "laravel",
+    "error": "Attempt to read property 'id' on null",
+    "severity": "LOW"
+  },
+  {
+    "id": 11,
+    "app": "laravel",
+    "error": "Route [login] not defined",
+    "severity": "MEDIUM"
+  },
+  {
+    "id": 12,
+    "app": "laravel",
+    "error": "View [welcome] not found",
+    "severity": "MEDIUM"
+  },
+  {
+    "id": 13,
+    "app": "laravel",
+    "error": "419 Page Expired",
+    "severity": "MEDIUM"
+  },
+  {
+    "id": 14,
+    "app": "laravel",
+    "error": "The stream or file could not be opened in append mode",
+    "severity": "MEDIUM"
+  },
+  {
+    "id": 15,
+    "app": "laravel",
+    "error": "No application encryption key has been specified",
+    "severity": "MEDIUM"
+  },
+  {
+    "id": 16,
+    "app": "laravel",
+    "error": "Session store not set on request",
+    "severity": "MEDIUM"
+  },
+  {
+    "id": 17,
+    "app": "laravel",
+    "error": "Too few arguments to function",
+    "severity": "MEDIUM"
+  },
+  {
+    "id": 18,
+    "app": "laravel",
+    "error": "Allowed memory size exhausted",
+    "severity": "MEDIUM"
+  },
+  {
+    "id": 19,
+    "app": "laravel",
+    "error": "Serialization of 'Closure' is not allowed",
+    "severity": "MEDIUM"
+  },
+  {
+    "id": 20,
+    "app": "laravel",
+    "error": "Invalid route action",
+    "severity": "MEDIUM"
+  },
+  {
+    "id": 21,
+    "app": "laravel",
+    "error": "CSRF token mismatch",
+    "severity": "HIGH"
+  },
+  {
+    "id": 22,
+    "app": "laravel",
+    "error": "Driver [redis] not supported",
+    "severity": "HIGH"
+  },
+  {
+    "id": 23,
+    "app": "laravel",
+    "error": "Route cache cleared but route still not found",
+    "severity": "HIGH"
+  },
+  {
+    "id": 24,
+    "app": "laravel",
+    "error": "Auth guard [api] is not defined",
+    "severity": "HIGH"
+  },
+  {
+    "id": 25,
+    "app": "laravel",
+    "error": "Unable to locate Mix file: /js/app.js",
+    "severity": "HIGH"
+  },
+  {
+    "id": 26,
+    "app": "laravel",
+    "error": "The MAC is invalid",
+    "severity": "HIGH"
+  },
+  {
+    "id": 27,
+    "app": "laravel",
+    "error": "Facade root has not been set",
+    "severity": "HIGH"
+  },
+  {
+    "id": 28,
+    "app": "laravel",
+    "error": "Failed opening required vendor/autoload.php",
+    "severity": "HIGH"
+  },
+  {
+    "id": 29,
+    "app": "laravel",
+    "error": "Queue connection [redis] has not been configured",
+    "severity": "HIGH"
+  },
+  {
+    "id": 30,
+    "app": "laravel",
+    "error": "Carbon parse error: Unexpected data found",
+    "severity": "HIGH"
+  },
+  {
+    "id": 31,
+    "app": "nodejs",
+    "error": "Error: Cannot find module 'express'",
+    "severity": "LOW"
+  },
+  {
+    "id": 32,
+    "app": "nodejs",
+    "error": "ReferenceError: x is not defined",
+    "severity": "LOW"
+  },
+  {
+    "id": 33,
+    "app": "nodejs",
+    "error": "TypeError: Cannot read properties of undefined",
+    "severity": "LOW"
+  },
+  {
+    "id": 34,
+    "app": "nodejs",
+    "error": "TypeError: callback is not a function",
+    "severity": "LOW"
+  },
+  {
+    "id": 35,
+    "app": "nodejs",
+    "error": "SyntaxError: Unexpected token",
+    "severity": "LOW"
+  },
+  {
+    "id": 36,
+    "app": "nodejs",
+    "error": "UnhandledPromiseRejectionWarning",
+    "severity": "LOW"
+  },
+  {
+    "id": 37,
+    "app": "nodejs",
+    "error": "Error [ERR_HTTP_HEADERS_SENT]: Cannot set headers after they are sent",
+    "severity": "LOW"
+  },
+  {
+    "id": 38,
+    "app": "nodejs",
+    "error": "Error: listen EADDRINUSE: address already in use",
+    "severity": "LOW"
+  },
+  {
+    "id": 39,
+    "app": "nodejs",
+    "error": "Error: ENOENT: no such file or directory",
+    "severity": "LOW"
+  },
+  {
+    "id": 40,
+    "app": "nodejs",
+    "error": "Error: EACCES: permission denied",
+    "severity": "LOW"
+  },
+  {
+    "id": 41,
+    "app": "nodejs",
+    "error": "Error: socket hang up",
+    "severity": "MEDIUM"
+  },
+  {
+    "id": 42,
+    "app": "nodejs",
+    "error": "Error: connect ECONNREFUSED",
+    "severity": "MEDIUM"
+  },
+  {
+    "id": 43,
+    "app": "nodejs",
+    "error": "Error: read ECONNRESET",
+    "severity": "MEDIUM"
+  },
+  {
+    "id": 44,
+    "app": "nodejs",
+    "error": "RangeError: Maximum call stack size exceeded",
+    "severity": "MEDIUM"
+  },
+  {
+    "id": 45,
+    "app": "nodejs",
+    "error": "FATAL ERROR: Reached heap limit Allocation failed - JavaScript heap out of memory",
+    "severity": "MEDIUM"
+  },
+  {
+    "id": 46,
+    "app": "nodejs",
+    "error": "Error [ERR_REQUIRE_ESM]: require() of ES Module not supported",
+    "severity": "MEDIUM"
+  },
+  {
+    "id": 47,
+    "app": "nodejs",
+    "error": "Error [ERR_MODULE_NOT_FOUND]: Cannot find package",
+    "severity": "MEDIUM"
+  },
+  {
+    "id": 48,
+    "app": "nodejs",
+    "error": "DeprecationWarning: Buffer() is deprecated",
+    "severity": "MEDIUM"
+  },
+  {
+    "id": 49,
+    "app": "nodejs",
+    "error": "Error: self signed certificate",
+    "severity": "MEDIUM"
+  },
+  {
+    "id": 50,
+    "app": "nodejs",
+    "error": "Error: request entity too large",
+    "severity": "MEDIUM"
+  },
+  {
+    "id": 51,
+    "app": "nodejs",
+    "error": "Error [ERR_STREAM_WRITE_AFTER_END]: write after end",
+    "severity": "HIGH"
+  },
+  {
+    "id": 52,
+    "app": "nodejs",
+    "error": "MongoServerError: E11000 duplicate key error",
+    "severity": "HIGH"
+  },
+  {
+    "id": 53,
+    "app": "nodejs",
+    "error": "SequelizeConnectionError: connect ETIMEDOUT",
+    "severity": "HIGH"
+  },
+  {
+    "id": 54,
+    "app": "nodejs",
+    "error": "PrismaClientInitializationError: Can't reach database server",
+    "severity": "HIGH"
+  },
+  {
+    "id": 55,
+    "app": "nodejs",
+    "error": "AxiosError: timeout of 5000ms exceeded",
+    "severity": "HIGH"
+  },
+  {
+    "id": 56,
+    "app": "nodejs",
+    "error": "TypeError: Cannot destructure property of undefined",
+    "severity": "HIGH"
+  },
+  {
+    "id": 57,
+    "app": "nodejs",
+    "error": "Error [ERR_INVALID_ARG_TYPE]: The 'path' argument must be of type string",
+    "severity": "HIGH"
+  },
+  {
+    "id": 58,
+    "app": "nodejs",
+    "error": "FetchError: invalid json response body",
+    "severity": "HIGH"
+  },
+  {
+    "id": 59,
+    "app": "nodejs",
+    "error": "Error: write EPIPE",
+    "severity": "HIGH"
+  },
+  {
+    "id": 60,
+    "app": "nodejs",
+    "error": "Node Sass does not yet support your current environment",
+    "severity": "HIGH"
+  }
+]
