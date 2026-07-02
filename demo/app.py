@@ -84,6 +84,23 @@ def healthcheck() -> dict:
     return _healthcheck_response(service.healthcheck())
 
 
+@app.post("/api/demo/autonomous")
+def autonomous() -> dict:
+    """AIOps mode: create an incident, then auto-remediate with NO human approval."""
+    service.reset_target()
+    result = service.autonomous_remediate()
+    before = result["before"]
+    cards = [build_healthcheck_card(before, _analysis_text(before))]
+    if not result["acted"]:
+        return {"acted": False, "cards": cards, "note": "Target already healthy — no action taken."}
+    cards.append(build_result_card(result["request"]))
+    return {
+        "acted": True,
+        "cards": cards,
+        "note": "Autonomous remediation: runbook tier autoFixable → executed without approval, then verified.",
+    }
+
+
 @app.post("/api/demo/request-approval")
 def request_approval() -> dict:
     """Recommend a remediation for the current (unhealthy) state and open an approval."""

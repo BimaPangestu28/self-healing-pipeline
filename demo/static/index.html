@@ -66,6 +66,7 @@
       </div>
       <div class="toolbar">
         <button class="tool" id="btn-start">▶ Start scenario</button>
+        <button class="tool" id="btn-auto">⚡ Auto-heal</button>
         <button class="tool" id="btn-reset">↺ Reset</button>
       </div>
     </header>
@@ -208,8 +209,26 @@
       }
     }
 
+    const btnAuto = document.getElementById("btn-auto");
+
+    async function autonomousHeal() {
+      btnAuto.disabled = true;
+      feed.innerHTML = "";
+      renderNote("🤖 Autonomous mode — incident detected, remediating without approval…");
+      try {
+        const res = await postJSON("/api/demo/autonomous");
+        (res.cards || []).forEach(renderCard);
+        if (res.note) renderNote(res.note);
+      } catch (e) {
+        renderNote("Auto-heal failed — see server logs.");
+      } finally {
+        btnAuto.disabled = false;
+      }
+    }
+
     btnStart.addEventListener("click", startScenario);
     btnReset.addEventListener("click", resetOnly);
+    btnAuto.addEventListener("click", autonomousHeal);
     chatSend.addEventListener("click", sendChat);
     chatInput.addEventListener("keydown", (e) => { if (e.key === "Enter") sendChat(); });
   </script>

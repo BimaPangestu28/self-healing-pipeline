@@ -95,6 +95,15 @@ def test_approve_executes_and_heals():
     assert decided.verify is not None and decided.verify.healthy is True
 
 
+def test_autonomous_remediate_heals_without_approval():
+    service = _service()
+    result = service.autonomous_remediate()
+    assert result["acted"] is True
+    assert service.kube.restart_calls >= 1  # remediation executed
+    assert result["request"].status is ApprovalStatus.EXECUTED
+    assert result["request"].verify is not None and result["request"].verify.healthy is True
+
+
 def test_reject_leaves_target_untouched():
     service = _service()
     action = service.recommend_action(service.healthcheck())

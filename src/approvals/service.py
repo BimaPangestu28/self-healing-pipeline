@@ -202,6 +202,22 @@ class DemoService:
         request.status = ApprovalStatus.EXECUTED if execution.success else ApprovalStatus.FAILED
         return request
 
+    def autonomous_remediate(self) -> dict:
+        """Detect -> recommend -> execute -> verify with NO human approval (AIOps mode).
+
+        Intended for high-confidence, low-risk actions. Returns the pre-check report
+        and the executed request (with verification), or acted=False when healthy.
+        """
+        before = self.healthcheck()
+        if before.healthy:
+            return {"before": before, "acted": False, "request": None}
+        action = self.recommend_action(before)
+        if action is None:
+            return {"before": before, "acted": False, "request": None}
+        request = self.create_approval(action)
+        decided = self.approve(request.request_id)  # executes + verifies, no human
+        return {"before": before, "acted": True, "request": decided}
+
     def _require(self, request_id: str) -> ApprovalRequest:
         request = self._requests.get(request_id)
         if request is None:

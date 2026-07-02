@@ -18,6 +18,20 @@ The headline use case, mirroring the production AION "Action Approval Required" 
   **✅ Completed Successfully / OK Healthy**.
 - **Proof:** watch `kubectl -n self-healing get pods -w` — the pod restarts on Approve.
 
+## 1b. Autonomous remediation (no approval) — the "⚡ Auto-heal" button
+
+The same incident, remediated **without a human** — the AIOps autonomous path.
+
+- **Trigger:** `make demo` → click **⚡ Auto-heal** (or `POST /api/demo/autonomous`).
+- **Flow:** incident created → healthcheck (Unhealthy) → recommended action classified
+  `autoFixable` → **executed immediately** (real rollout restart) → verified healthy.
+  No approval card, no buttons.
+- **Policy:** autonomous is meant for high-confidence, low-risk actions. Risky/unknown
+  actions still go through the approval path (use case 1). This mirrors the coverage-
+  matrix tiers (`autoFixable` → auto; `escalate` → human).
+
+![autonomous flow](screenshots/autonomous-flow.png)
+
 ## 2. Reject path (no action taken)
 
 - **Trigger:** in the demo, click **Reject** instead of Approve.

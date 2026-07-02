@@ -154,15 +154,12 @@ def build_result_card(request: ApprovalRequest) -> dict[str, Any]:
 
     tool_label = (execution.tool if execution else "job").title()
     body.append(_text(f"{tool_label} Execution", weight="Bolder", spacing="Medium"))
-    body.append(
-        _facts(
-            [
-                ("Job", execution.job_id if execution else "-"),
-                ("Template ID", execution.template_id if execution else "-"),
-                ("Target Host", execution.target_host if execution else "-"),
-                ("Duration", f"{execution.duration_seconds if execution else 0} seconds"),
-                ("Result", "✅ Successful" if success else "❌ Failed"),
-            ]
-        )
-    )
+    exec_facts: list[tuple[str, str]] = [("Job", execution.job_id if execution else "-")]
+    if execution and execution.template_id:  # AWX-only
+        exec_facts.append(("Template ID", execution.template_id))
+    if execution and execution.target_host:  # AWX-only
+        exec_facts.append(("Target Host", execution.target_host))
+    exec_facts.append(("Duration", f"{execution.duration_seconds if execution else 0} seconds"))
+    exec_facts.append(("Result", "✅ Successful" if success else "❌ Failed"))
+    body.append(_facts(exec_facts))
     return _card(body)
