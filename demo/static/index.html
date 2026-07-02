@@ -7,6 +7,9 @@
   <!-- Official Adaptive Cards renderer: renders the exact card JSON the backend produces,
        including the interactive Approve/Reject Action.Submit buttons. -->
   <script src="https://unpkg.com/adaptivecards@3.0.4/dist/adaptivecards.min.js"></script>
+  <!-- Render the assistant's markdown (tables, bold, lists) into clean HTML. -->
+  <script src="https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/dompurify@3.1.6/dist/purify.min.js"></script>
   <style>
     :root { --bg:#f5f5f7; --panel:#fff; --brand:#5b5fc7; --muted:#616161; }
     * { box-sizing: border-box; }
@@ -33,6 +36,14 @@
     .msg { max-width:80%; padding:9px 13px; border-radius:14px; font-size:14px; line-height:1.4; white-space:pre-wrap; }
     .msg.user { align-self:flex-end; background:var(--brand); color:#fff; border-bottom-right-radius:4px; }
     .msg.bot { align-self:flex-start; background:#eef0fb; color:#242424; border-bottom-left-radius:4px; }
+    .msg.md { white-space:normal; }
+    .msg.md p { margin:6px 0; } .msg.md p:first-child { margin-top:0; } .msg.md p:last-child { margin-bottom:0; }
+    .msg.md ul, .msg.md ol { margin:6px 0; padding-left:20px; }
+    .msg.md table { border-collapse:collapse; margin:8px 0; font-size:13px; }
+    .msg.md th, .msg.md td { border:1px solid #c3c7e6; padding:4px 9px; text-align:left; }
+    .msg.md th { background:#e2e5f7; }
+    .msg.md code { background:#dde1f5; padding:1px 5px; border-radius:4px; font-size:13px; }
+    .msg.md strong { font-weight:600; }
     .composer { display:flex; gap:8px; padding:12px 16px; border-top:1px solid #eee;
                 position:sticky; bottom:0; background:var(--panel); }
     .composer input { flex:1; border:1px solid #d0d0d5; border-radius:20px; padding:10px 14px; font-size:14px; outline:none; }
@@ -165,7 +176,13 @@
     function renderMessage(text, who) {
       const el = document.createElement("div");
       el.className = "msg " + who;
-      el.textContent = text;
+      if (who === "bot" && window.marked) {
+        el.classList.add("md");
+        const html = window.marked.parse(text);
+        el.innerHTML = window.DOMPurify ? window.DOMPurify.sanitize(html) : html;
+      } else {
+        el.textContent = text;
+      }
       feed.appendChild(el);
       el.scrollIntoView({ behavior: "smooth", block: "end" });
     }
