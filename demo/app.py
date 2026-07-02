@@ -128,11 +128,22 @@ def usecases() -> dict:
     return {"usecases": list_scenarios()}
 
 
+def _with_tools(before: int, payload: dict) -> dict:
+    """Attach the tool usages (input/output) recorded during this request."""
+    from src import tool_trace
+
+    payload["tools"] = tool_trace.events_after(before)
+    return payload
+
+
 @app.post("/api/demo/usecase/{scenario_id}", tags=["Demo"], summary="Run a use case (induce fault + remediate/inspect)")
 def run_usecase(scenario_id: str) -> JSONResponse:
-    """Induce the scenario's fault and remediate/inspect it; return the cards."""
+    """Induce the scenario's fault and remediate/inspect it; return cards + tool usages."""
+    from src import tool_trace
+
+    before = tool_trace.current_cursor()
     result = run_scenario(scenario_id, service.kube, service.config, service)
-    return JSONResponse(result)
+    return JSONResponse(_with_tools(before, result))
 
 
 @app.post("/api/demo/autonomous", tags=["Demo"], summary="Autonomous remediation — detect, execute, verify (no approval)")
@@ -167,11 +178,14 @@ def request_approval() -> dict:
 def approve(payload: dict = Body(default={})) -> JSONResponse:
     """Approve a request: execute the real remediation and return the result card."""
     request_id = payload.get("requestId") or payload.get("request_id")
+    from src import tool_trace
+
     request = service.get(request_id) if request_id else None
     if request is None:
         return JSONResponse({"error": "unknown approval request"}, status_code=404)
+    before = tool_trace.current_cursor()
     request = service.approve(request_id)
-    return JSONResponse({"status": request.status.value, "card": build_result_card(request)})
+    return JSONResponse(_with_tools(before, {"status": request.status.value, "card": build_result_card(request)}))
 
 
 @app.post("/api/demo/reject", tags=["Demo"], summary="Reject a request (no change to the cluster)")
@@ -188,11 +202,14 @@ def reject(payload: dict = Body(default={})) -> JSONResponse:
 @app.post("/api/demo/chat", tags=["Agent"], summary="Chat with the LLM SRE agent (tool-calling, approval-gated)")
 def chat(payload: dict = Body(default={})) -> JSONResponse:
     """Conversational endpoint: an LLM agent that can healthcheck + propose remediation."""
+    from src import tool_trace
+
     session_id = payload.get("session_id") or "default"
     message = (payload.get("message") or "").strip()
     if not message:
         return JSONResponse({"reply": "Please type a message.", "cards": [], "llm": False})
-    return JSONResponse(agent.handle(session_id, message))
+    before = tool_trace.current_cursor()
+    return JSONResponse(_with_tools(before, agent.handle(session_id, message)))
 
 
 @app.post("/api/teams/messages", tags=["Teams"], summary="Bot Framework adaptiveCard/action invoke (Approve/Reject)")

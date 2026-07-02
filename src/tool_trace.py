@@ -48,6 +48,10 @@ class ToolTrace:
         with self._lock:
             return [asdict(e) for e in self._buffer if e.id > cursor]
 
+    def current_cursor(self) -> int:
+        with self._lock:
+            return self._buffer[-1].id if self._buffer else 0
+
 
 def _clip(value: str) -> str:
     text = str(value).strip()
@@ -65,3 +69,8 @@ def record(tool: str, input: str, output: str, ok: bool = True) -> None:
 def events_after(cursor: int) -> list[dict]:
     """Return tool events with id greater than ``cursor``."""
     return _TRACE.after(cursor)
+
+
+def current_cursor() -> int:
+    """Return the latest tool-event id (0 when empty)."""
+    return _TRACE.current_cursor()
