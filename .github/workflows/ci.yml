@@ -1,0 +1,34 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    name: Unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install dependencies
+        # The self-healing pipeline + notifications + approvals packages only need
+        # pydantic + httpx + fastapi; no cluster or agent-framework required for tests.
+        run: pip install pydantic pydantic-settings "httpx<1.0" fastapi pytest pytest-asyncio
+
+      - name: Run tests
+        env:
+          PYTHONPATH: .
+        run: |
+          python -m pytest \
+            tests/test_self_healing.py \
+            tests/test_teams_notifications.py \
+            tests/test_approvals.py \
+            tests/test_teams_endpoint.py \
+            -q
