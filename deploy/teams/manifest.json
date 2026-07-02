@@ -1,0 +1,36 @@
+{
+  "$schema": "https://developer.microsoft.com/en-us/json-schemas/teams/v1.16/MicrosoftTeams.schema.json",
+  "manifestVersion": "1.16",
+  "version": "1.0.0",
+  "id": "REPLACE_WITH_MICROSOFT_APP_ID",
+  "packageName": "id.markethac.aion.selfhealing",
+  "developer": {
+    "name": "AION SRE",
+    "websiteUrl": "https://example.com",
+    "privacyUrl": "https://example.com/privacy",
+    "termsOfUseUrl": "https://example.com/terms"
+  },
+  "name": {
+    "short": "AION Self-Healing",
+    "full": "AION Self-Healing Approval Bot"
+  },
+  "description": {
+    "short": "Approve/reject SRE remediations from Teams.",
+    "full": "AION posts healthcheck + Action Approval Required cards and executes the approved remediation (human-in-the-loop)."
+  },
+  "icons": {
+    "color": "color.png",
+    "outline": "outline.png"
+  },
+  "accentColor": "#5B5FC7",
+  "bots": [
+    {
+      "botId": "REPLACE_WITH_MICROSOFT_APP_ID",
+      "scopes": ["personal", "team", "groupchat"],
+      "supportsFiles": false,
+      "isNotificationOnly": false
+    }
+  ],
+  "permissions": ["identity", "messageTeamMembers"],
+  "validDomains": []
+}

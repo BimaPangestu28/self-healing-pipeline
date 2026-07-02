@@ -19,6 +19,7 @@ dependencies = [
     "azure-identity>=1.18.0",
     "opentelemetry-exporter-otlp-proto-http>=1.25.0",
     "pandas>=3.0.1",
+    "pyjwt[crypto]>=2.8",
 ]
 
 [project.optional-dependencies]

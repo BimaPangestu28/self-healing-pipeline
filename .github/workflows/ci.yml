@@ -20,7 +20,7 @@ jobs:
       - name: Install dependencies
         # The self-healing pipeline + notifications + approvals packages only need
         # pydantic + httpx + fastapi; no cluster or agent-framework required for tests.
-        run: pip install pydantic pydantic-settings "httpx<1.0" fastapi pytest pytest-asyncio
+        run: pip install pydantic pydantic-settings "httpx<1.0" fastapi "pyjwt[crypto]>=2.8" pytest pytest-asyncio
 
       - name: Run unit tests
         env:
@@ -33,6 +33,7 @@ jobs:
             tests/test_teams_endpoint.py \
             tests/test_analysis.py \
             tests/test_agent.py \
+            tests/test_bot_auth.py \
             -q
 
   integration:
@@ -58,7 +59,7 @@ jobs:
           kind load docker-image self-healing-memory-app:local --name kind
 
       - name: Install dependencies
-        run: pip install pydantic pydantic-settings "httpx<1.0" fastapi pytest pytest-asyncio
+        run: pip install pydantic pydantic-settings "httpx<1.0" fastapi "pyjwt[crypto]>=2.8" pytest pytest-asyncio
 
       - name: Run end-to-end integration tests against the cluster
         env:

@@ -164,6 +164,10 @@ signature on every request (unsigned requests get `401`).
 To *post* the initial approval card into a channel, use the incoming webhook
 (`TEAMS_WEBHOOK_URL`) via `src/notifications` — see below.
 
+For a **real Azure Bot** (Bot Framework JWT auth, Teams app manifest, dev tunnel,
+sideload), see **[docs/TEAMS_BOT.md](docs/TEAMS_BOT.md)**. Setting `MICROSOFT_APP_ID`
+makes `/api/teams/messages` require a valid Bot Framework token.
+
 ## Tests
 
 ```bash

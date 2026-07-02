@@ -17,6 +17,7 @@ from fastapi.responses import FileResponse, JSONResponse
 
 from src.approvals.agent import ChatAgent
 from src.approvals.analysis import build_analysis
+from src.approvals.bot_auth import bearer_token, bot_app_id, verify_bot_framework_jwt
 from src.approvals.cards import build_approval_card, build_healthcheck_card, build_result_card
 from src.approvals.models import HealthReport
 from src.approvals.service import DemoService
@@ -130,15 +131,24 @@ def chat(payload: dict = Body(default={})) -> JSONResponse:
 async def teams_messages(request: Request) -> JSONResponse:
     """Bot Framework messaging endpoint for Teams Adaptive Card actions.
 
-    Point a Teams bot (or a Power Automate flow) at this URL. Approve/Reject button
+    Point an Azure Bot (or a Power Automate flow) at this URL. Approve/Reject button
     clicks arrive as an ``adaptiveCard/action`` invoke; the response is a refreshed
-    Adaptive Card that Teams renders in place. When ``TEAMS_OUTGOING_WEBHOOK_SECRET``
-    is set, the HMAC signature on the request is verified.
+    Adaptive Card that Teams renders in place.
+
+    Inbound auth (first configured mode wins):
+    - ``MICROSOFT_APP_ID`` set -> require a valid Bot Framework JWT (Azure Bot).
+    - ``TEAMS_OUTGOING_WEBHOOK_SECRET`` set -> verify the HMAC signature.
+    - neither -> open (development only).
     """
     body = await request.body()
 
+    app_id = bot_app_id()
     secret = os.getenv("TEAMS_OUTGOING_WEBHOOK_SECRET", "").strip()
-    if secret and not verify_hmac(secret, body, request.headers.get("authorization")):
+    if app_id:
+        token = bearer_token(request.headers.get("authorization"))
+        if not token or not verify_bot_framework_jwt(token, app_id):
+            return JSONResponse({"error": "invalid or missing Bot Framework token"}, status_code=401)
+    elif secret and not verify_hmac(secret, body, request.headers.get("authorization")):
         return JSONResponse({"error": "invalid HMAC signature"}, status_code=401)
 
     try:
