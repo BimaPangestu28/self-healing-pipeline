@@ -10,6 +10,10 @@ original AIOps SRE agent as a base, and adds two new packages:
 
 - `src/self_healing/` — the pipeline (kube client, coverage matrix, L1 tests, L2 fix, orchestrator)
 - `src/notifications/` — Microsoft Teams Adaptive Card builders + delivery client
+- `src/approvals/` — the human-in-the-loop approval flow + remediation executors
+
+See **[docs/USE_CASES.md](docs/USE_CASES.md)** for the full list of demo scenarios.
+Run `make help` for all shortcuts.
 
 ## How it works
 

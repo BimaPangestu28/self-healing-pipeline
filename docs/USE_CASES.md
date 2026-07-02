@@ -1,0 +1,69 @@
+# Demo Use Cases
+
+What each part of this project demonstrates, how to trigger it, and what "success"
+looks like. All of these run against a real local Kubernetes cluster (colima/k3s or
+kind); only the memory metric is simulated — remediation actions are real.
+
+## 1. Approval-gated remediation (the AION memory flow)
+
+The headline use case, mirroring the production AION "Action Approval Required" cards.
+
+- **Trigger:** `make demo` → open http://127.0.0.1:8080 → **Start scenario**
+- **Flow:** Auto Healthcheck reports **Unhealthy** (Memory 85% NOK, W3SVC OK) →
+  analysis + recommendation → interactive **Action Approval Required** card →
+  a human clicks **Approve** → real remediation runs → verification healthcheck →
+  **✅ Completed Successfully / OK Healthy**.
+- **Proof:** watch `kubectl -n self-healing get pods -w` — the pod restarts on Approve.
+
+## 2. Reject path (no action taken)
+
+- **Trigger:** in the demo, click **Reject** instead of Approve.
+- **Success:** card shows **⛔ Action Rejected**; the cluster is untouched and stays
+  unhealthy. Nothing is executed.
+
+## 3. Self-healing deployment (image drift / ImagePullBackOff)
+
+Autonomous detect → fix loop with no human in the loop, for a broken deployment.
+
+- **Trigger:** `make pipeline-setup` (deploys a broken image) then `make pipeline-run`
+- **Flow:** L1 readiness check fails (ErrImagePull, 0 endpoints) → classified against
+  the coverage matrix (`RB-INFRA-001`, autoFixable) → image reset to the known-good
+  tag → rollout → validation passes.
+- **Success:** `make pipeline-status` → `healthy: True`; run exits `0` when clean.
+
+## 4. Pluggable remediation backends (Kubernetes / Ansible / AWX)
+
+The same approval flow, different execution engine — selected via `EXECUTOR`.
+
+- **Kubernetes (default):** `make demo` → remediation is `kubectl rollout restart`.
+- **Ansible:** `make demo-ansible` → runs a real `ansible-playbook`
+  (`deploy/ansible/restart_app.yml`); result card header reads **Ansible Execution**.
+- **AWX/Tower:** `AWX_URL=… AWX_TOKEN=… EXECUTOR=awx make demo` → launches a job
+  template over REST and polls it (matches the production template ids 9665/9666).
+
+## 5. Microsoft Teams delivery + interactive approval
+
+- **Outbound card:** render an Adaptive Card and post it to a Teams incoming webhook
+  (`TEAMS_WEBHOOK_URL`) via `src/notifications` — pipeline reports and alert analyses.
+- **Interactive approval in Teams:** point a Teams bot / Power Automate flow at
+  `POST /api/teams/messages`. Approve/Reject clicks arrive as an
+  `adaptiveCard/action` invoke; the endpoint executes the decision and returns a
+  refreshed card. With `TEAMS_OUTGOING_WEBHOOK_SECRET` set, requests are HMAC-verified
+  (unsigned → `401`).
+
+## 6. Drift detection (running but off-policy image tag)
+
+- **Behavior:** even when pods are healthy, an image tag that doesn't match the
+  expected pattern (e.g. `latest` instead of `vX.Y.Z`) is flagged as `image_drift`
+  and remediated by resetting to the known-good tag.
+
+---
+
+### Backend actions vs simulation (be explicit)
+
+| Element | Local demo | Production mapping |
+|---------|-----------|--------------------|
+| Remediation (restart) | **Real** k8s rollout restart / real ansible-playbook | AWX job on the real host |
+| Memory metric (85%→32%) | Simulated (deterministic) | Read by the Ansible healthcheck template |
+| Target host | k8s `sample-app` (traefik/whoami) | Windows/IIS host, OutSystems |
+| Teams cards | Real Adaptive Cards (web renderer + invoke contract) | Real Teams tenant via bot / Power Automate |
