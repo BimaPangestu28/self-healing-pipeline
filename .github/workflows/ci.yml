@@ -34,6 +34,7 @@ jobs:
             tests/test_analysis.py \
             tests/test_agent.py \
             tests/test_bot_auth.py \
+            tests/test_scenarios.py \
             -q
 
   integration:

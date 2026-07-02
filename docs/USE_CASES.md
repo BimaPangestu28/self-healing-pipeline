@@ -1,11 +1,21 @@
 # Demo Use Cases
 
 What each part of this project demonstrates, how to trigger it, and what "success"
-looks like. All of these run against a real local Kubernetes cluster (colima/k3s or
-kind). Both the remediation and the memory metric are **real**: the demo target
+looks like. All of these run against a real local Kubernetes cluster (kind or
+colima/k3s). Both the remediation and the memory metric are **real**: the demo target
 (`memory-app`) allocates actual memory on `/leak`, the metric is read from the pod
 **cgroup** (`/sys/fs/cgroup/memory.current` ÷ `memory.max`), and a rollout restart
 frees it.
+
+The demo UI is split: **left = chatbot** (free-text LLM agent), **right = use-case
+list**. Each use case induces a real fault and remediates/inspects it — results render
+in the chat on the left.
+
+![UI layout: chat left, use cases right](screenshots/ui-layout.png)
+
+Use cases in the sidebar: **High memory** (restart), **Image drift** (reset image),
+**Service outage / 0 replicas** (scale up), and **Capacity report** (read-only
+diagnostics) — a mix of remediation and diagnostics, not just auto-healing.
 
 ## 1. Approval-gated remediation (the AION memory flow)
 

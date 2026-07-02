@@ -37,6 +37,72 @@ def _card(body: list[dict[str, Any]], actions: list[dict[str, Any]] | None = Non
     return card
 
 
+def build_incident_card(
+    *,
+    title: str,
+    application: str,
+    host: str,
+    pod: str | None,
+    healthy: bool,
+    services: list[tuple[str, bool, str]],
+    analysis: str | None = None,
+) -> dict[str, Any]:
+    """Generic incident/healthcheck card for any scenario (not just memory)."""
+    status_label, status_color = _status_text(healthy)
+    facts = [("Host (node)", host), ("Application", application)]
+    if pod:
+        facts.append(("Pod", pod))
+    body: list[dict[str, Any]] = [
+        _text(f"🩺 {title}", weight="Bolder", size="Large"),
+        _text(f"Overall Status: {status_label}", weight="Bolder", color=status_color),
+        _facts(facts),
+        _text("Checks", weight="Bolder", spacing="Medium"),
+    ]
+    for name, ok, detail in services:
+        body.append(_text(f"- {name}: {'✅ OK' if ok else '❌ NOK'} — {detail}", spacing="None"))
+    if analysis:
+        body.append(_text("Analysis & Recommendation", weight="Bolder", spacing="Medium"))
+        body.append(_text(analysis))
+    return _card(body)
+
+
+def build_scenario_result_card(
+    *,
+    title: str,
+    healthy: bool,
+    action: str,
+    tool: str,
+    duration_seconds: float,
+    host: str,
+    services: list[tuple[str, bool, str]],
+) -> dict[str, Any]:
+    """Generic completion card for a scenario remediation."""
+    color = "Good" if healthy else "Attention"
+    body: list[dict[str, Any]] = [
+        _text(title, weight="Bolder", size="Large", color=color),
+        _facts(
+            [
+                ("Action", action),
+                ("Host", host),
+                ("Overall Status", "✅ OK Healthy" if healthy else "❌ Unhealthy"),
+            ]
+        ),
+        _text("Checks", weight="Bolder", spacing="Medium"),
+    ]
+    for name, ok, detail in services:
+        body.append(_text(f"- {name}: {'✅ OK' if ok else '❌ NOK'} — {detail}", spacing="None"))
+    body.append(_text(f"{tool.title()} Execution", weight="Bolder", spacing="Medium"))
+    body.append(
+        _facts(
+            [
+                ("Duration", f"{duration_seconds} seconds"),
+                ("Result", "✅ Successful" if healthy else "❌ Failed"),
+            ]
+        )
+    )
+    return _card(body)
+
+
 def build_message_card(text: str, *, color: str | None = None) -> dict[str, Any]:
     """Render a single-line informational Adaptive Card."""
     return _card([_text(text, weight="Bolder", **({"color": color} if color else {}))])

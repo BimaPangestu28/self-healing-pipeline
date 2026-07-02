@@ -20,6 +20,7 @@ from src.approvals.analysis import build_analysis
 from src.approvals.bot_auth import bearer_token, bot_app_id, verify_bot_framework_jwt
 from src.approvals.cards import build_approval_card, build_healthcheck_card, build_result_card
 from src.approvals.models import HealthReport
+from src.approvals.scenarios import list_scenarios, run_scenario
 from src.approvals.service import DemoService
 from src.approvals.teams_endpoint import handle_teams_activity, verify_hmac
 from src.self_healing.config import PipelineConfig
@@ -109,6 +110,19 @@ def reset() -> dict:
 def healthcheck() -> dict:
     """Run a healthcheck against the current target state."""
     return _healthcheck_response(service.healthcheck())
+
+
+@app.get("/api/demo/usecases", tags=["Demo"], summary="List the available demo use cases")
+def usecases() -> dict:
+    """Return the scenario list shown in the UI sidebar."""
+    return {"usecases": list_scenarios()}
+
+
+@app.post("/api/demo/usecase/{scenario_id}", tags=["Demo"], summary="Run a use case (induce fault + remediate/inspect)")
+def run_usecase(scenario_id: str) -> JSONResponse:
+    """Induce the scenario's fault and remediate/inspect it; return the cards."""
+    result = run_scenario(scenario_id, service.kube, service.config, service)
+    return JSONResponse(result)
 
 
 @app.post("/api/demo/autonomous", tags=["Demo"], summary="Autonomous remediation — detect, execute, verify (no approval)")

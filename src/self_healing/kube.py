@@ -265,6 +265,18 @@ class KubeClient:
         """Trigger a rolling restart of a deployment."""
         self._run(["rollout", "restart", f"deployment/{deployment}"])
 
+    def scale_deployment(self, deployment: str, replicas: int) -> None:
+        """Scale a deployment to the given replica count."""
+        self._run(["scale", f"deployment/{deployment}", f"--replicas={replicas}"])
+
+    def desired_replicas(self, deployment: str) -> int:
+        """Return the deployment's desired replica count (spec.replicas)."""
+        result = self._run(
+            ["get", "deployment", deployment, "-o", "jsonpath={.spec.replicas}"],
+            check=False,
+        )
+        return _safe_int(result.stdout.strip())
+
     def wait_rollout(self, deployment: str, timeout: int = 120) -> bool:
         """Wait for a deployment rollout to complete; return True on success."""
         result = self._run(
