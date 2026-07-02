@@ -68,7 +68,21 @@ is LLM-generated (matching how AION phrases its analysis).
 - **Fallback:** with no credentials, the deterministic template is used, so the
   demo always runs offline. LLM failures also fall back silently.
 
-## 7. Drift detection (running but off-policy image tag)
+## 7. Conversational agent (LLM tool-calling, approval-gated)
+
+Chat with AION in free text; the LLM decides which tools to call. Type into the
+demo's chat box (e.g. *"how is outsystem?"*, *"please fix the memory issue"*).
+
+- **Tools the agent can call:** `get_healthcheck` (inspect the host) and
+  `propose_remediation` (open an approval card). The agent **cannot execute** —
+  it can only propose; remediation runs only when a human clicks Approve.
+- **Provider:** DeepSeek or Azure OpenAI (`LLM_PROVIDER`). Without credentials the
+  chat replies that the LLM is not configured (the button-driven flow still works).
+- **Endpoint:** `POST /api/demo/chat {session_id, message}` → `{reply, cards}`.
+
+![chat flow](screenshots/chat-flow.png)
+
+## 8. Drift detection (running but off-policy image tag)
 
 - **Behavior:** even when pods are healthy, an image tag that doesn't match the
   expected pattern (e.g. `latest` instead of `vX.Y.Z`) is flagged as `image_drift`

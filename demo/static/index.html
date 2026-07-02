@@ -30,6 +30,15 @@
                  box-shadow:0 1px 2px rgba(0,0,0,.05); }
     .stamp { font-size:11px; color:var(--muted); margin:2px 4px; }
     .note { font-size:12px; color:var(--muted); text-align:center; padding:6px; }
+    .msg { max-width:80%; padding:9px 13px; border-radius:14px; font-size:14px; line-height:1.4; white-space:pre-wrap; }
+    .msg.user { align-self:flex-end; background:var(--brand); color:#fff; border-bottom-right-radius:4px; }
+    .msg.bot { align-self:flex-start; background:#eef0fb; color:#242424; border-bottom-left-radius:4px; }
+    .composer { display:flex; gap:8px; padding:12px 16px; border-top:1px solid #eee;
+                position:sticky; bottom:0; background:var(--panel); }
+    .composer input { flex:1; border:1px solid #d0d0d5; border-radius:20px; padding:10px 14px; font-size:14px; outline:none; }
+    .composer input:focus { border-color:var(--brand); }
+    .composer button { border:none; background:var(--brand); color:#fff; border-radius:20px; padding:10px 18px; font-size:14px; cursor:pointer; }
+    .composer button:disabled { opacity:.5; cursor:not-allowed; }
     /* Adaptive Cards look */
     .ac-textBlock { margin:2px 0; }
     .ac-pushButton { border-radius:8px !important; padding:8px 16px !important; margin-right:8px !important;
@@ -50,8 +59,12 @@
       </div>
     </header>
     <div id="feed">
-      <div class="note">Click “Start scenario” to trigger an unhealthy alert (memory 85%),
-        get a recommendation, and approve the remediation.</div>
+      <div class="note">Click “Start scenario” for the scripted flow, or just chat below
+        (e.g. “how is outsystem?”, “please fix the memory issue”).</div>
+    </div>
+    <div class="composer">
+      <input id="chat-input" type="text" placeholder="Ask AION… e.g. how is outsystem?" autocomplete="off" />
+      <button id="chat-send">Send</button>
     </div>
   </div>
 
@@ -144,8 +157,44 @@
       renderCard(health.card);
     }
 
+    // --- chat ---
+    const chatInput = document.getElementById("chat-input");
+    const chatSend = document.getElementById("chat-send");
+    const sessionId = "web-" + Math.random().toString(36).slice(2);
+
+    function renderMessage(text, who) {
+      const el = document.createElement("div");
+      el.className = "msg " + who;
+      el.textContent = text;
+      feed.appendChild(el);
+      el.scrollIntoView({ behavior: "smooth", block: "end" });
+    }
+
+    async function sendChat() {
+      const message = chatInput.value.trim();
+      if (!message) return;
+      chatInput.value = "";
+      chatSend.disabled = true;
+      renderMessage(message, "user");
+      const thinking = renderNote("AION is thinking…");
+      try {
+        const res = await postJSON("/api/demo/chat", { session_id: sessionId, message });
+        thinking.remove();
+        if (res.reply) renderMessage(res.reply, "bot");
+        (res.cards || []).forEach(renderCard);
+      } catch (e) {
+        thinking.remove();
+        renderMessage("Error contacting the agent.", "bot");
+      } finally {
+        chatSend.disabled = false;
+        chatInput.focus();
+      }
+    }
+
     btnStart.addEventListener("click", startScenario);
     btnReset.addEventListener("click", resetOnly);
+    chatSend.addEventListener("click", sendChat);
+    chatInput.addEventListener("keydown", (e) => { if (e.key === "Enter") sendChat(); });
   </script>
 </body>
 </html>

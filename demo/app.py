@@ -15,6 +15,7 @@ from pathlib import Path
 from fastapi import Body, FastAPI, Request
 from fastapi.responses import FileResponse, JSONResponse
 
+from src.approvals.agent import ChatAgent
 from src.approvals.analysis import build_analysis
 from src.approvals.cards import build_approval_card, build_healthcheck_card, build_result_card
 from src.approvals.models import HealthReport
@@ -46,6 +47,7 @@ def _build_service() -> DemoService:
 
 
 service = _build_service()
+agent = ChatAgent(service)
 app = FastAPI(title="Self-Healing Approval Demo")
 
 
@@ -112,6 +114,16 @@ def reject(payload: dict = Body(default={})) -> JSONResponse:
         return JSONResponse({"error": "unknown approval request"}, status_code=404)
     request = service.reject(request_id)
     return JSONResponse({"status": request.status.value, "card": build_result_card(request)})
+
+
+@app.post("/api/demo/chat")
+def chat(payload: dict = Body(default={})) -> JSONResponse:
+    """Conversational endpoint: an LLM agent that can healthcheck + propose remediation."""
+    session_id = payload.get("session_id") or "default"
+    message = (payload.get("message") or "").strip()
+    if not message:
+        return JSONResponse({"reply": "Please type a message.", "cards": [], "llm": False})
+    return JSONResponse(agent.handle(session_id, message))
 
 
 @app.post("/api/teams/messages")

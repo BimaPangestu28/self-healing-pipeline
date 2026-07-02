@@ -6,6 +6,8 @@ import os
 
 import httpx
 
+from src.llm.types import LlmMessage, parse_message
+
 _DEFAULT_BASE_URL = "https://api.deepseek.com"
 _DEFAULT_MODEL = "deepseek-chat"
 
@@ -49,6 +51,30 @@ class DeepSeekClient:
             response.raise_for_status()
             data = response.json()
         return data["choices"][0]["message"]["content"].strip()
+
+    def complete(
+        self,
+        messages: list[dict],
+        tools: list[dict] | None = None,
+        tool_choice: str = "auto",
+    ) -> LlmMessage:
+        """Chat-complete with optional tool calling; return content and tool calls."""
+        payload: dict = {
+            "model": self.model,
+            "messages": messages,
+            "temperature": 0.2,
+            "max_tokens": self.max_tokens,
+            "stream": False,
+        }
+        if tools:
+            payload["tools"] = tools
+            payload["tool_choice"] = tool_choice
+        headers = {"Authorization": f"Bearer {self.api_key}", "Content-Type": "application/json"}
+        with httpx.Client(timeout=self.timeout, transport=self._transport) as client:
+            response = client.post(f"{self.base_url}/chat/completions", headers=headers, json=payload)
+            response.raise_for_status()
+            message = response.json()["choices"][0]["message"]
+        return parse_message(message)
 
     @classmethod
     def from_env(cls, transport: httpx.BaseTransport | None = None) -> "DeepSeekClient | None":

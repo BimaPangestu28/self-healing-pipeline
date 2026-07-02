@@ -16,10 +16,17 @@ import httpx
 
 from src.llm.azure_openai import AzureOpenAIChatClient
 from src.llm.deepseek import DeepSeekClient
+from src.llm.types import LlmMessage, ToolCall
 
 logger = logging.getLogger(__name__)
 
-__all__ = ["AzureOpenAIChatClient", "DeepSeekClient", "build_llm_client"]
+__all__ = [
+    "AzureOpenAIChatClient",
+    "DeepSeekClient",
+    "LlmMessage",
+    "ToolCall",
+    "build_llm_client",
+]
 
 _AZURE_ALIASES = {"azure", "azure_openai", "azureopenai"}
 
