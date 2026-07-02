@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AION · Self-Healing Approval Demo</title>
+  <!-- Official Adaptive Cards renderer: renders the exact card JSON the backend produces,
+       including the interactive Approve/Reject Action.Submit buttons. -->
+  <script src="https://unpkg.com/adaptivecards@3.0.4/dist/adaptivecards.min.js"></script>
+  <style>
+    :root { --bg:#f5f5f7; --panel:#fff; --brand:#5b5fc7; --muted:#616161; }
+    * { box-sizing: border-box; }
+    body { margin:0; font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+           background:var(--bg); color:#242424; }
+    .app { max-width:720px; margin:0 auto; min-height:100vh; background:var(--panel);
+           display:flex; flex-direction:column; box-shadow:0 0 24px rgba(0,0,0,.06); }
+    header { display:flex; align-items:center; gap:12px; padding:14px 18px;
+             border-bottom:1px solid #eee; position:sticky; top:0; background:var(--panel); z-index:2; }
+    .avatar { width:36px; height:36px; border-radius:50%; background:var(--brand); color:#fff;
+              display:flex; align-items:center; justify-content:center; font-weight:700; }
+    header h1 { font-size:15px; margin:0; } header .sub { font-size:12px; color:var(--muted); }
+    .toolbar { margin-left:auto; display:flex; gap:8px; }
+    button.tool { border:1px solid #d0d0d5; background:#fafafa; border-radius:8px; padding:7px 12px;
+                  font-size:13px; cursor:pointer; }
+    button.tool:hover { background:#f0f0f5; }
+    button.tool:disabled { opacity:.5; cursor:not-allowed; }
+    #feed { padding:18px; display:flex; flex-direction:column; gap:14px; flex:1; }
+    .bubble { align-self:flex-start; max-width:92%; }
+    .card-wrap { background:#fff; border:1px solid #e6e6ea; border-radius:12px; padding:14px 16px;
+                 box-shadow:0 1px 2px rgba(0,0,0,.05); }
+    .stamp { font-size:11px; color:var(--muted); margin:2px 4px; }
+    .note { font-size:12px; color:var(--muted); text-align:center; padding:6px; }
+    /* Adaptive Cards look */
+    .ac-textBlock { margin:2px 0; }
+    .ac-pushButton { border-radius:8px !important; padding:8px 16px !important; margin-right:8px !important;
+                     cursor:pointer; border:1px solid #d0d0d5; }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <div class="avatar">A</div>
+      <div>
+        <h1>AION · Alert Aggregator</h1>
+        <div class="sub">Self-healing approval demo · local k3s cluster</div>
+      </div>
+      <div class="toolbar">
+        <button class="tool" id="btn-start">▶ Start scenario</button>
+        <button class="tool" id="btn-reset">↺ Reset</button>
+      </div>
+    </header>
+    <div id="feed">
+      <div class="note">Click “Start scenario” to trigger an unhealthy alert (memory 85%),
+        get a recommendation, and approve the remediation.</div>
+    </div>
+  </div>
+
+  <script>
+    const feed = document.getElementById("feed");
+    const btnStart = document.getElementById("btn-start");
+    const btnReset = document.getElementById("btn-reset");
+
+    function stamp() {
+      const now = new Date();
+      return now.getHours().toString().padStart(2, "0") + "." +
+             now.getMinutes().toString().padStart(2, "0");
+    }
+
+    async function postJSON(path, body) {
+      const res = await fetch(path, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body || {})
+      });
+      return res.json();
+    }
+
+    function renderCard(cardJson) {
+      const wrap = document.createElement("div");
+      wrap.className = "bubble";
+
+      const stampEl = document.createElement("div");
+      stampEl.className = "stamp";
+      stampEl.textContent = "AION · " + stamp();
+      wrap.appendChild(stampEl);
+
+      const cardBox = document.createElement("div");
+      cardBox.className = "card-wrap";
+
+      const adaptiveCard = new AdaptiveCards.AdaptiveCard();
+      adaptiveCard.onExecuteAction = (action) => handleAction(action.data || {});
+      adaptiveCard.parse(cardJson);
+      cardBox.appendChild(adaptiveCard.render());
+
+      wrap.appendChild(cardBox);
+      feed.appendChild(wrap);
+      wrap.scrollIntoView({ behavior: "smooth", block: "end" });
+      return wrap;
+    }
+
+    function renderNote(text) {
+      const note = document.createElement("div");
+      note.className = "note";
+      note.textContent = text;
+      feed.appendChild(note);
+      note.scrollIntoView({ behavior: "smooth", block: "end" });
+      return note;
+    }
+
+    async function handleAction(data) {
+      if (!data.verb) return;
+      if (data.verb === "approve") {
+        const working = renderNote("⏳ Approved — executing remediation on the cluster (rollout restart)…");
+        const result = await postJSON("/api/demo/approve", { requestId: data.requestId });
+        working.remove();
+        if (result.card) renderCard(result.card);
+      } else if (data.verb === "reject") {
+        const result = await postJSON("/api/demo/reject", { requestId: data.requestId });
+        if (result.card) renderCard(result.card);
+      }
+    }
+
+    async function startScenario() {
+      btnStart.disabled = true;
+      feed.innerHTML = "";
+      renderNote("① Auto healthcheck detected an issue…");
+      const health = await postJSON("/api/demo/reset");
+      renderCard(health.card);
+
+      renderNote("② Recommended action requires approval…");
+      const approval = await postJSON("/api/demo/request-approval");
+      if (approval.pending) {
+        renderCard(approval.card);
+      } else {
+        renderNote(approval.message || "No action needed.");
+      }
+      btnStart.disabled = false;
+    }
+
+    async function resetOnly() {
+      feed.innerHTML = "";
+      const health = await postJSON("/api/demo/reset");
+      renderNote("Target reset to unhealthy (memory 85%).");
+      renderCard(health.card);
+    }
+
+    btnStart.addEventListener("click", startScenario);
+    btnReset.addEventListener("click", resetOnly);
+  </script>
+</body>
+</html>

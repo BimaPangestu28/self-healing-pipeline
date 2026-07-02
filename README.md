@@ -81,10 +81,47 @@ the card JSON is still printed.
 There is also a delivery endpoint for an external orchestrator (cron/agent) to POST a structured
 run summary and have this service render + deliver it: `POST /api/v1/pipeline/report`.
 
+## End-to-end approval demo (Teams-style, interactive)
+
+Reproduces the AION "Action Approval Required" flow with a clickable web UI that
+renders the **real Adaptive Cards** (via the official Adaptive Cards JS renderer),
+backed by a **real rollout restart** on the local cluster:
+
+```
+① Auto Healthcheck  → ❌ Unhealthy (Memory 85% NOK, W3SVC OK) + analysis/recommendation
+② Action Approval Required → interactive card with [Approve] [Reject]
+③ Approve → kubectl rollout restart (real) → verify → ✅ Completed Successfully / OK Healthy
+```
+
+Run it:
+
+```bash
+uv pip install --python .venv/bin/python fastapi "uvicorn[standard]"
+export PYTHONPATH=$PWD
+.venv/bin/python run_demo.py        # http://127.0.0.1:8080
+```
+
+Open the page and click **Start scenario**. The Approve/Reject buttons round-trip
+through `POST /api/demo/approve|reject`, which execute the real remediation and
+return the completion card. Backend endpoints (also drivable via `curl`):
+
+| Endpoint | Purpose |
+|----------|---------|
+| `POST /api/demo/reset` | Deploy the app healthy and seed the memory fault (85%) |
+| `POST /api/demo/healthcheck` | Healthcheck card (readiness is real, memory simulated) |
+| `POST /api/demo/request-approval` | Recommend action + interactive approval card |
+| `POST /api/demo/approve` | Execute real rollout restart, verify, return result card |
+| `POST /api/demo/reject` | Reject without touching the cluster |
+
+> The memory metric is simulated (deterministic demo); the **remediation action is a
+> real Kubernetes rollout restart**. To wire the buttons to actual Microsoft Teams,
+> point a Teams bot or a Power Automate flow at `/api/demo/approve` — the card actions
+> already carry `{"verb": "approve"|"reject", "requestId": …}`.
+
 ## Tests
 
 ```bash
-PYTHONPATH=$PWD .venv/bin/python -m pytest tests/test_self_healing.py tests/test_teams_notifications.py -q
+PYTHONPATH=$PWD .venv/bin/python -m pytest tests/test_self_healing.py tests/test_teams_notifications.py tests/test_approvals.py -q
 ```
 
 `test_self_healing.py` exercises the full detect→fix→validate loop against an in-memory fake

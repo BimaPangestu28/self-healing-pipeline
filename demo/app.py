@@ -1,0 +1,107 @@
+"""FastAPI server for the approval-driven self-healing demo.
+
+Reproduces the AION flow end-to-end against a real local cluster:
+healthcheck (unhealthy) -> analysis/recommendation -> interactive approval card ->
+approve -> real rollout restart -> verify -> completion card.
+"""
+
+from __future__ import annotations
+
+import logging
+from pathlib import Path
+
+from fastapi import Body, FastAPI
+from fastapi.responses import FileResponse, JSONResponse
+
+from src.approvals.cards import build_approval_card, build_healthcheck_card, build_result_card
+from src.approvals.service import DemoService, HealthReport
+from src.self_healing.config import PipelineConfig
+from src.self_healing.kube import KubeClient
+
+logger = logging.getLogger(__name__)
+
+_STATIC_DIR = Path(__file__).parent / "static"
+
+
+def _build_service() -> DemoService:
+    """Construct the demo service bound to the local cluster."""
+    config = PipelineConfig()
+    kube = KubeClient(namespace=config.namespace)
+    return DemoService(kube=kube, config=config)
+
+
+service = _build_service()
+app = FastAPI(title="Self-Healing Approval Demo")
+
+
+def _analysis_text(report: HealthReport) -> str:
+    """Produce a root-cause + recommendation narrative for a healthcheck report."""
+    if report.healthy:
+        return "All services are healthy. No action required."
+    return (
+        f"Root Cause: The Memory Usage service check is NOK, reporting high utilization at "
+        f"{report.memory_percent}%. The W3SVC service is healthy.\n\n"
+        f"Recommendation: The overall health status of {report.application} on host "
+        f"{report.host} is Unhealthy due to high memory consumption. A restart of the "
+        f"{report.application} application is required to reclaim memory."
+    )
+
+
+def _healthcheck_response(report: HealthReport) -> dict:
+    """Shape a healthcheck report into the API response envelope."""
+    return {
+        "healthy": report.healthy,
+        "memory_percent": report.memory_percent,
+        "card": build_healthcheck_card(report, _analysis_text(report)),
+    }
+
+
+@app.get("/")
+def index() -> FileResponse:
+    """Serve the demo web UI."""
+    return FileResponse(_STATIC_DIR / "index.html")
+
+
+@app.post("/api/demo/reset")
+def reset() -> dict:
+    """Redeploy the sample app healthy and seed the simulated high-memory fault."""
+    return _healthcheck_response(service.reset_target())
+
+
+@app.post("/api/demo/healthcheck")
+def healthcheck() -> dict:
+    """Run a healthcheck against the current target state."""
+    return _healthcheck_response(service.healthcheck())
+
+
+@app.post("/api/demo/request-approval")
+def request_approval() -> dict:
+    """Recommend a remediation for the current (unhealthy) state and open an approval."""
+    report = service.healthcheck()
+    action = service.recommend_action(report)
+    if action is None:
+        return {"pending": False, "message": "Target already healthy; no action needed."}
+    request = service.create_approval(action)
+    return {"pending": True, "request_id": request.request_id, "card": build_approval_card(request)}
+
+
+@app.post("/api/demo/approve")
+def approve(payload: dict = Body(default={})) -> JSONResponse:
+    """Approve a request: execute the real remediation and return the result card."""
+    request_id = payload.get("requestId") or payload.get("request_id")
+    request = service.get(request_id) if request_id else None
+    if request is None:
+        return JSONResponse({"error": "unknown approval request"}, status_code=404)
+    request = service.approve(request_id)
+    return JSONResponse({"status": request.status.value, "card": build_result_card(request)})
+
+
+@app.post("/api/demo/reject")
+def reject(payload: dict = Body(default={})) -> JSONResponse:
+    """Reject a request without touching the cluster."""
+    request_id = payload.get("requestId") or payload.get("request_id")
+    request = service.get(request_id) if request_id else None
+    if request is None:
+        return JSONResponse({"error": "unknown approval request"}, status_code=404)
+    request = service.reject(request_id)
+    return JSONResponse({"status": request.status.value, "card": build_result_card(request)})
